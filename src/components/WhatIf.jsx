@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { GROUPS, SKILLS, ENVS, PARAMS, targetAnalysis, alphaSweep } from '../lib/engine.js';
+import { GROUPS, PARAMS, targetAnalysis, alphaSweep } from '../lib/engine.js';
 import MajorSearch from './MajorSearch.jsx';
 import { LabelChip } from './Results.jsx';
 
@@ -15,11 +15,6 @@ export default function WhatIf({ t, opt, setOpt, student, result, onReset, perso
     raw[i] = Number(v);
     const sum = raw.reduce((a, b) => a + b, 0) || 1;
     set({ persona: 'custom', weights: raw.map((x) => x / sum) });
-  };
-  const step = (code, d) => {
-    const cur = student.skills[code] + (opt.delta[code] || 0);
-    const next = Math.max(1, Math.min(5, cur + d));
-    set({ delta: { ...opt.delta, [code]: next - student.skills[code] } });
   };
 
   const target = opt.targetMajor ? targetAnalysis(result, opt.targetMajor) : null;
@@ -72,38 +67,6 @@ export default function WhatIf({ t, opt, setOpt, student, result, onReset, perso
           <input type="checkbox" checked={opt.yVowel} onChange={(e) => set({ yVowel: e.target.checked })} />
           <span>{t.yRule}</span>
         </label>
-        <label className="field inline">
-          <span>{t.envOverride}</span>
-          <select value={opt.envOverride} onChange={(e) => set({ envOverride: e.target.value })}>
-            <option value="">{t.envSame}</option>
-            {ENVS.map((e) => <option key={e} value={e}>{t.env(e)}</option>)}
-          </select>
-        </label>
-      </fieldset>
-
-      <fieldset className="field">
-        <legend>{t.skillsHead}</legend>
-        <small className="hint">{t.skillsHint}</small>
-        <ul className="skills">
-          {SKILLS.map((code) => {
-            const base = student.skills[code];
-            const eff = result.effectiveSkills[code];
-            const d = eff - base;
-            return (
-              <li key={code} className={eff <= PARAMS.weakMax ? 'weak' : ''}>
-                <span className="sk-name">{t.skill(code)}</span>
-                <span className="stepper">
-                  <button type="button" onClick={() => step(code, -1)} disabled={eff <= 1}
-                    aria-label={`${t.skill(code)} −1`}>−</button>
-                  <b>{eff}</b>
-                  <button type="button" onClick={() => step(code, 1)} disabled={eff >= 5}
-                    aria-label={`${t.skill(code)} +1`}>+</button>
-                </span>
-                <small className="delta">{d ? (d > 0 ? `+${d}` : d) : ''}</small>
-              </li>
-            );
-          })}
-        </ul>
       </fieldset>
 
       <fieldset className="field">
@@ -126,7 +89,10 @@ export default function WhatIf({ t, opt, setOpt, student, result, onReset, perso
               <p className="note good">{t.alreadyPriority}</p>
             ) : (
               <div className="note">
-                {target.stepsWeak > 0 && <p>{t.stepsWeak(target.stepsWeak)}</p>}
+                {target.stepsWeak > 0 && (
+                  <p>{t.stepsWeak(target.stepsWeak, target.row.weakSkills
+                    .map((w) => `${t.skill(w.code)} (${w.level} → ${PARAMS.weakMax + 1})`).join('; '))}</p>
+                )}
                 {target.stepsMain > 0 && (
                   <p>{t.stepsMain(target.stepsMain, t.skill(`SK${String(target.row.profile.a[0]).padStart(2, '0')}`))}</p>
                 )}

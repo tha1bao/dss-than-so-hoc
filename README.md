@@ -6,7 +6,7 @@ Web demo của hệ hỗ trợ ra quyết định gợi ý nhóm ngành đại h
 
 - **Nhập hồ sơ mới**: họ tên, ngày sinh, tự đánh giá 12 nhóm kỹ năng (thang 1–5), môi trường làm việc mong muốn → web tự tính biểu đồ ngày sinh, 5 nhóm tín hiệu (G1, G5, G6, G4, G2), Soul Urge và chấm 35 hồ sơ ngành.
 - **Top-3 hồ sơ ngành** với điểm C = α·NF + β·SR + γ·ENV, nhãn Ưu tiên / Cân nhắc / Thử thách / Không đề xuất, NF, EC, SR, ENV, SAT, STR, kỹ năng cần phát triển và danh sách ngành cụ thể.
-- **What-if**: đổi persona (Học sinh / Phụ huynh / Tư vấn viên) hoặc tự chỉnh α β γ; bật/tắt từng nhóm tín hiệu; bỏ trọng số vị trí; quy tắc chữ Y; thử môi trường khác; tăng/giảm từng kỹ năng; Bước 5 – ngành mục tiêu; α-sweep.
+- **What-if**: đổi persona (Học sinh / Phụ huynh / Tư vấn viên) hoặc tự chỉnh α β γ; bật/tắt từng nhóm tín hiệu; bỏ trọng số vị trí; quy tắc chữ Y; Bước 5 – ngành mục tiêu; α-sweep. Muốn thử kỹ năng hoặc môi trường khác thì sửa trực tiếp ở form nhập hồ sơ.
 - **Hồ sơ mẫu** HS001, HS021, HS015 để chạy lại 3 tình huống trong bài.
 
 Ba điểm mạnh (top strength, dùng cho STR) được lấy tự động là 3 kỹ năng có điểm cao nhất; bằng điểm thì kỹ năng đứng trước trong danh sách SK01…SK33 được chọn. Hồ sơ mẫu giữ top strength gốc của dữ liệu.
