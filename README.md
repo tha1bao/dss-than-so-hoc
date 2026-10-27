@@ -4,12 +4,14 @@ Web demo của hệ hỗ trợ ra quyết định gợi ý nhóm ngành đại h
 
 ## Chức năng
 
-- **Nhập hồ sơ mới**: họ tên, ngày sinh, 3 kỹ năng mạnh nhất, môi trường làm việc mong muốn → web tự tính biểu đồ ngày sinh, 5 nhóm tín hiệu (G1, G5, G6, G4, G2), Soul Urge và chấm 35 hồ sơ ngành.
+- **Nhập hồ sơ mới**: họ tên, ngày sinh, tự đánh giá 12 nhóm kỹ năng (thang 1–5), môi trường làm việc mong muốn → web tự tính biểu đồ ngày sinh, 5 nhóm tín hiệu (G1, G5, G6, G4, G2), Soul Urge và chấm 35 hồ sơ ngành.
 - **Top-3 hồ sơ ngành** với điểm C = α·NF + β·SR + γ·ENV, nhãn Ưu tiên / Cân nhắc / Thử thách / Không đề xuất, NF, EC, SR, ENV, SAT, STR, kỹ năng cần phát triển và danh sách ngành cụ thể.
 - **What-if**: đổi persona (Học sinh / Phụ huynh / Tư vấn viên) hoặc tự chỉnh α β γ; bật/tắt từng nhóm tín hiệu; bỏ trọng số vị trí; quy tắc chữ Y; thử môi trường khác; tăng/giảm từng kỹ năng; Bước 5 – ngành mục tiêu; α-sweep.
 - **Hồ sơ mẫu** HS001, HS021, HS015 để chạy lại 3 tình huống trong bài.
 
-Quy ước kỹ năng khi nhập hồ sơ mới: kỹ năng mạnh thứ 1 = 5, thứ 2 và 3 = 4, các kỹ năng còn lại = 3 (mức trung bình). Chỉnh chi tiết ở phần What-if.
+Ba điểm mạnh (top strength, dùng cho STR) được lấy tự động là 3 kỹ năng có điểm cao nhất; bằng điểm thì kỹ năng đứng trước trong danh sách SK01…SK33 được chọn. Hồ sơ mẫu giữ top strength gốc của dữ liệu.
+
+Ở Bước 5 có ô tìm ngành theo tên (gõ không dấu cũng được). Bảng 35 hồ sơ ngành hiển thị tên theo archetype và ngành tiêu biểu thay cho mã P01…P35.
 
 ## Kiểm chứng với file Excel
 

@@ -1,17 +1,12 @@
 import { useState } from 'react';
-import { SKILLS, ENVS } from '../lib/engine.js';
+import { SKILLS, ENVS, PARAMS } from '../lib/engine.js';
 
-export default function InputPanel({ t, form, errors, onChange, samples, onSample }) {
+export default function InputPanel({ t, form, errors, onChange, samples, onSample, strengths }) {
   const [touched, setTouched] = useState({});
   const show = (k) => touched[k] && errors[k];
   const touch = (k) => setTouched((s) => ({ ...s, [k]: true }));
 
-  const setTop = (i, code) => {
-    const top = [...form.top];
-    top[i] = code;
-    onChange({ top });
-    touch('top');
-  };
+  const setSkill = (code, v) => onChange({ skills: { ...form.skills, [code]: v } });
 
   return (
     <section className="panel input-panel" aria-labelledby="input-head">
@@ -34,23 +29,27 @@ export default function InputPanel({ t, form, errors, onChange, samples, onSampl
       </label>
 
       <fieldset className="field">
-        <legend>{t.strengths}</legend>
-        {[0, 1, 2].map((i) => (
-          <label key={i} className="strength">
-            <span className="strength-n" aria-hidden="true">{i + 1}</span>
-            <select value={form.top[i]} onChange={(e) => setTop(i, e.target.value)} aria-label={t.strengthN(i + 1)}>
-              <option value="">—</option>
-              {SKILLS.map((code) => (
-                <option key={code} value={code}
-                  disabled={form.top.includes(code) && form.top[i] !== code}>
-                  {t.skill(code)}
-                </option>
-              ))}
-            </select>
-          </label>
-        ))}
-        <small className="hint">{t.strengthsHint}</small>
-        {show('top') && <small className="err">{t.errTop}</small>}
+        <legend>{t.skillsInput}</legend>
+        <small className="hint">{t.skillsInputHint}</small>
+        <ul className="likert">
+          {SKILLS.map((code) => (
+            <li key={code} className={form.skills[code] <= PARAMS.weakMax ? 'weak' : ''}>
+              <span className="likert-name" id={`lk-${code}`}>{t.skill(code)}</span>
+              <span className="likert-scale" role="radiogroup" aria-labelledby={`lk-${code}`}>
+                {[1, 2, 3, 4, 5].map((v) => (
+                  <button key={v} type="button" role="radio" aria-checked={form.skills[code] === v}
+                    aria-label={`${v}`} className={form.skills[code] === v ? 'on' : ''}
+                    onClick={() => setSkill(code, v)}>
+                    {v}
+                  </button>
+                ))}
+              </span>
+            </li>
+          ))}
+        </ul>
+        <p className="strengths-line">
+          <b>{t.strengthsDerived}</b> {strengths.map((n) => t.skill(`SK${String(n).padStart(2, '0')}`)).join('; ')}
+        </p>
       </fieldset>
 
       <fieldset className="field">

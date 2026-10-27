@@ -1,17 +1,9 @@
 import { useMemo } from 'react';
-import { GROUPS, SKILLS, ENVS, MAJORS, PARAMS, targetAnalysis, alphaSweep } from '../lib/engine.js';
+import { GROUPS, SKILLS, ENVS, PARAMS, targetAnalysis, alphaSweep } from '../lib/engine.js';
+import MajorSearch from './MajorSearch.jsx';
 import { LabelChip } from './Results.jsx';
 
 const KEYS = ['alpha', 'beta', 'gamma'];
-
-const categories = (() => {
-  const m = new Map();
-  for (const x of MAJORS) {
-    if (!m.has(x.category)) m.set(x.category, []);
-    m.get(x.category).push(x);
-  }
-  return [...m.entries()].sort((a, b) => a[0].localeCompare(b[0]));
-})();
 
 export default function WhatIf({ t, opt, setOpt, student, result, onReset, personas }) {
   const set = (patch) => setOpt((o) => ({ ...o, ...patch }));
@@ -116,18 +108,11 @@ export default function WhatIf({ t, opt, setOpt, student, result, onReset, perso
 
       <fieldset className="field">
         <legend>{t.targetHead}</legend>
-        <select value={opt.targetMajor ?? ''} onChange={(e) => set({ targetMajor: e.target.value || null })}>
-          <option value="">{t.targetPh}</option>
-          {categories.map(([cat, list]) => (
-            <optgroup key={cat} label={cat}>
-              {list.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
-            </optgroup>
-          ))}
-        </select>
+        <MajorSearch t={t} value={opt.targetMajor} onChange={(v) => set({ targetMajor: v })} />
         {target && (
           <div className="target">
             <p>
-              <strong>{target.major.name}</strong>, {target.row.profile.id} ({target.row.profile.a.join(' – ')})
+              {t.inProfile} <strong>{t.profileName(target.row.profile)}</strong>
             </p>
             <dl className="metrics">
               <div><dt>{t.targetLabel}</dt><dd><LabelChip t={t} label={target.row.label} /></dd></div>
@@ -156,10 +141,15 @@ export default function WhatIf({ t, opt, setOpt, student, result, onReset, perso
         <h3>{t.sweepHead}</h3>
         <table>
           <thead>
-            <tr><th scope="row">α</th>{sweep.map((s) => <th key={s.alpha} scope="col">{t.num(s.alpha, 1)}</th>)}</tr>
+            <tr><th scope="col">α</th><th scope="col">{t.sweepTop}</th></tr>
           </thead>
           <tbody>
-            <tr><th scope="row">{t.sweepTop}</th>{sweep.map((s) => <td key={s.alpha}>{s.top1}</td>)}</tr>
+            {sweep.map((s) => (
+              <tr key={s.alpha} className={Math.abs(s.alpha - opt.weights[0]) < 0.001 ? 'cur' : ''}>
+                <td>{t.num(s.alpha, 1)}</td>
+                <td>{s.a.length ? t.profileName({ a: s.a }) : '–'}</td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>

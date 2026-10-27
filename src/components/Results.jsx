@@ -16,7 +16,7 @@ function ProfileResult({ t, row, baseRank }) {
         <div className="result-title">
           <h3>{row.profile.a.map((a) => t.arch(a)).join(' + ')}</h3>
           <p>
-            {row.profile.id}, archetype {row.profile.a.join(' – ')}, {t.env(row.profile.env)}
+            Archetype {row.profile.a.join(' – ')}, {t.env(row.profile.env)}
           </p>
         </div>
         <LabelChip t={t} label={row.label} />

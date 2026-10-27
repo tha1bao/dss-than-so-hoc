@@ -10,18 +10,18 @@ import WhatIf from './components/WhatIf.jsx';
 import AllProfiles from './components/AllProfiles.jsx';
 
 const SAMPLE_ORDER = ['HS001', 'HS021', 'HS015'];
-const toCode = (n) => `SK${String(n).padStart(2, '0')}`;
 
 function formFromSample(id) {
   const s = SAMPLES.find((x) => x.id === id);
-  return { name: s.name, dob: s.dob, top: s.top.map(toCode), env: s.env, baseSkills: s.skills, sampleId: id };
+  return { name: s.name, dob: s.dob, skills: { ...s.skills }, top: s.top, env: s.env, sampleId: id };
 }
 
-/** Ba kỹ năng mạnh nhất → 5 / 4 / 4, còn lại 3 (mức trung bình của thang 1–5). */
-function skillsFromTop(top) {
-  const s = Object.fromEntries(SKILLS.map((k) => [k, 3]));
-  top.forEach((code, i) => { if (code) s[code] = i === 0 ? 5 : 4; });
-  return s;
+/** Điểm mạnh (Q5, STR) = 3 kỹ năng có điểm cao nhất; bằng điểm thì kỹ năng đứng trước trong danh sách SK01…SK33. */
+export function topStrengths(skills) {
+  return SKILLS.map((code, i) => ({ code, v: skills[code], i }))
+    .sort((a, b) => b.v - a.v || a.i - b.i)
+    .slice(0, 3)
+    .map((x) => Number(x.code.slice(2)));
 }
 
 export function validate(form) {
@@ -29,7 +29,6 @@ export function validate(form) {
   if (form.name.trim().split(/\s+/).filter((w) => /\p{L}/u.test(w)).length < 2) errors.name = true;
   const y = Number(form.dob.slice(0, 4));
   if (!/^\d{4}-\d{2}-\d{2}$/.test(form.dob) || y < 1950 || y > 2020) errors.dob = true;
-  if (form.top.some((x) => !x) || new Set(form.top).size < 3) errors.top = true;
   if (!form.env) errors.env = true;
   return errors;
 }
@@ -52,8 +51,8 @@ export default function App() {
     if (!ready || !profile) return null;
     return {
       signals: profile.signals,
-      skills: form.baseSkills ?? skillsFromTop(form.top),
-      top: form.top.map((c) => Number(c.slice(2))),
+      skills: form.skills,
+      top: form.top ?? topStrengths(form.skills),
       env: form.env,
     };
   }, [ready, profile, form]);
@@ -61,8 +60,9 @@ export default function App() {
   const result = useMemo(() => (student ? scoreAll(student, opt) : null), [student, opt]);
   const baseline = useMemo(() => (student ? scoreAll(student, defaultOptions()) : null), [student]);
 
+  // Sửa kỹ năng thì điểm mạnh được tính lại từ 12 mức (hồ sơ mẫu giữ top_strength gốc của dữ liệu)
   const updateForm = (patch) => setForm((f) => ({ ...f, ...patch, sampleId: null,
-    baseSkills: 'top' in patch ? null : f.baseSkills }));
+    top: 'skills' in patch ? null : f.top }));
   const loadSample = (id) => { setForm(formFromSample(id)); setOpt(defaultOptions()); };
 
   return (
@@ -83,7 +83,7 @@ export default function App() {
         <aside className="side">
           <InputPanel t={t} form={form} errors={errors} onChange={updateForm}
             samples={SAMPLE_ORDER.map((id) => SAMPLES.find((s) => s.id === id))}
-            onSample={loadSample} />
+            onSample={loadSample} strengths={form.top ?? topStrengths(form.skills)} />
           {student && (
             <WhatIf t={t} opt={opt} setOpt={setOpt} student={student} result={result}
               onReset={() => setOpt({ ...defaultOptions(), targetMajor: opt.targetMajor })}

@@ -117,7 +117,7 @@ export function alphaSweep(student, opt, alphas = [0, 0.2, 0.4, 0.6, 0.8, 1]) {
     const rest = 1 - a;
     const bg = b0 + g0 || 1;
     const res = scoreAll(student, { ...opt, weights: [a, (rest * b0) / bg, (rest * g0) / bg] });
-    return { alpha: a, top1: res.top[0]?.profile.id ?? '–' };
+    return { alpha: a, top1: res.top[0]?.profile.id ?? '–', a: res.top[0]?.profile.a ?? [] };
   });
 }
 

@@ -19,7 +19,6 @@ export default function AllProfiles({ t, result }) {
               <tr>
                 <th scope="col">{t.rank}</th>
                 <th scope="col">{t.profile}</th>
-                <th scope="col">{t.archetypes}</th>
                 <th scope="col" className="num">C</th>
                 <th scope="col" className="num">NF</th>
                 <th scope="col" className="num">EC</th>
@@ -32,8 +31,10 @@ export default function AllProfiles({ t, result }) {
               {rows.map((r) => (
                 <tr key={r.profile.id} className={r.rank === null ? 'muted' : ''}>
                   <td>{r.rank ?? '–'}</td>
-                  <td>{r.profile.id}</td>
-                  <td>{r.profile.a.join(' – ')}</td>
+                  <td className="pname">
+                    <span>{t.profileName(r.profile)}</span>
+                    <small>{r.profile.examples.split('; ').slice(0, 2).join(', ')}{r.profile.n > 2 ? ` (+${r.profile.n - 2})` : ''}</small>
+                  </td>
                   <td className="num">{t.num(r.c)}</td>
                   <td className="num">{t.num(r.nf)}</td>
                   <td className="num">{r.ec}</td>
