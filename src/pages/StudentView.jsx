@@ -6,6 +6,7 @@ import { api, getKnowledge } from '../api.js';
 import { envName, ROLE_NAME } from '../format.js';
 import Dashboard from '../components/Dashboard.jsx';
 import { L1, L2, L3, L4, L5, L6, L7 } from '../components/Layers.jsx';
+import { t, tr, num, localizeKb } from '../i18n.js';
 
 export const LAYERS = [
   ['l0', 'L0 Tổng quan'], ['l1', 'L1 Vì sao?'], ['l2', 'L2 Tín hiệu'], ['l3', 'L3 Ánh xạ'], ['l4', 'L4 Công thức'],
@@ -56,20 +57,24 @@ export default function StudentView({ source, user, layer, sel: selParam, go }) 
     return () => { on = false; };
   }, [sid]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const kbL = localizeKb(kb); // tri thức theo ngôn ngữ (chỉ đổi chuỗi hiển thị)
   const person = useMemo(() => stu && ({
     sig: stu.sig, skills: stu.skills, env: stu.preferredEnv, tops: (stu.topStrengths ?? []).filter((x) => x != null),
     simulated: stu.simulated, exam: stu.exam, targetDefault: stu.targetDefault,
   }), [stu]);
   const basePersona = baseRun?.result.persona ?? (isGuest ? 'HS' : personaOf(user?.role));
-  const base = useMemo(() => (kb && person ? computeView({ ...person, ...targetFields(kb, person.targetDefault) }, kb, sanitizeOptions({ persona: basePersona }, kb, basePersona)) : null), [kb, person, basePersona]);
-  const out = useMemo(() => (kb && person && opt ? computeView({ ...person, ...targetFields(kb, target) }, kb, sanitizeOptions(opt, kb, basePersona)) : null), [kb, person, opt, target, basePersona]);
+  const base = useMemo(() => (kbL && person ? computeView({ ...person, ...targetFields(kbL, person.targetDefault) }, kbL, sanitizeOptions({ persona: basePersona }, kbL, basePersona)) : null), [kbL, person, basePersona]);
+  const out = useMemo(() => (kbL && person && opt ? computeView({ ...person, ...targetFields(kbL, target) }, kbL, sanitizeOptions(opt, kbL, basePersona)) : null), [kbL, person, opt, target, basePersona]);
+
+  const compare = useMemo(() => (kbL && person && opt ? ['HS', 'PH', 'TVV'].map((ps) => ({ persona: ps,
+    out: computeView({ ...person, ...targetFields(kbL, target) }, kbL, sanitizeOptions({ ...opt, persona: ps, weights: undefined }, kbL, basePersona)) })) : null), [kbL, person, opt, target, basePersona]);
 
   useEffect(() => { // engine client phải khớp kết quả server đã lưu
     if (base && baseRun && base.result.top.map((r) => r.profile).join() !== baseRun.result.top.map((r) => r.profile).join()) console.warn('Client/server lệch Top-3', base.result.top, baseRun.result.top);
   }, [base, baseRun]);
 
-  if (err) return <div className="panel empty"><p>{err.status === 403 ? 'Bạn không có quyền xem hồ sơ này.' : err.status === 404 ? 'Không tìm thấy học sinh.' : `Lỗi: ${err.message}`}</p><p><a href="#/">← về trang chính</a></p></div>;
-  if (!out) return <p className="empty">Đang tính…</p>;
+  if (err) return <div className="panel empty"><p>{err.status === 403 ? t('Bạn không có quyền xem hồ sơ này.') : err.status === 404 ? t('Không tìm thấy học sinh.') : `${tr('Lỗi', 'Error')}: ${err.message}`}</p><p><a href="#/">{t('← về trang chính')}</a></p></div>;
+  if (!out) return <p className="empty">{t('Đang tính…')}</p>;
 
   const sel = selParam && out.result.rows.some((r) => r.profile === selParam) ? selParam : (out.result.top[0]?.profile ?? out.result.rows[0].profile);
   const goLayer = (l, p) => {
@@ -84,7 +89,7 @@ export default function StudentView({ source, user, layer, sel: selParam, go }) 
   const save = async () => {
     setSaveState('saving');
     try {
-      const m = findMajor(kb, target);
+      const m = findMajor(kbL, target);
       const r = await api(`/students/${sid}/runs`, { method: 'POST', body: { ...opt, whatif: true, save: true, ...(m ? { targetMajorId: m.id } : {}) } });
       setSaveState(`ok:${r.runId}`);
     } catch (e) { setSaveState(`err:${e.message}`); }
@@ -93,29 +98,29 @@ export default function StudentView({ source, user, layer, sel: selParam, go }) 
     opt, setOpt, person, target, setTarget, dirty, saveState, canSave: !isGuest && !readOnlyAdmin, onSave: save,
     onReset: () => { setOpt({ persona: basePersona }); setTarget(person.targetDefault); setSaveState(null); },
   };
-  const props = { out, kb, person: p2, sel, setSel };
+  const props = { out, kb: kbL, person: p2, sel, setSel };
 
   return (
     <>
-      <nav className="crumbs" aria-label="Đường dẫn">
-        {!isGuest && user?.role !== 'student' && <><a href="#/students">Danh sách học sinh</a><span>›</span></>}
-        {isGuest && <><a href="#/guest">Tự nhập</a><span>›</span></>}
+      <nav className="crumbs" aria-label={t('Đường dẫn')}>
+        {!isGuest && user?.role !== 'student' && <><a href="#/students">{t('Danh sách học sinh')}</a><span>›</span></>}
+        {isGuest && <><a href="#/guest">{t('Tự nhập')}</a><span>›</span></>}
         <b>{stu.id}</b><span>{stu.name}</span>
-        <span className="muted">· sinh {stu.birthYear}{stu.grade ? ` · lớp ${stu.grade}` : ''} · môi trường mong muốn: {envName(kb, stu.preferredEnv)}</span>
-        {user && !isGuest && <span className="muted">· bạn xem với vai trò {ROLE_NAME[user.role]}</span>}
+        <span className="muted">· {tr('sinh', 'born')} {stu.birthYear}{stu.grade ? ` · ${tr('lớp', 'grade')} ${stu.grade}` : ''} · {tr('môi trường mong muốn', 'preferred environment')}: {envName(kbL, stu.preferredEnv)}</span>
+        {user && !isGuest && <span className="muted">· {tr('bạn xem với vai trò', 'viewing as')} {ROLE_NAME[user.role]}</span>}
       </nav>
-      <nav className="layers" aria-label="Tầng giải thích">
-        {LAYERS.map(([k, name]) => <a key={k} href={`#/${isGuest ? 'guest' : `s/${sid}`}/${k}${k !== 'l0' ? `?p=${sel}` : ''}`} aria-current={layer === k ? 'page' : undefined}>{name}</a>)}
+      <nav className="layers" aria-label={t('Tầng giải thích')}>
+        {LAYERS.map(([k, name]) => <a key={k} href={`#/${isGuest ? 'guest' : `s/${sid}`}/${k}${k !== 'l0' ? `?p=${sel}` : ''}`} aria-current={layer === k ? 'page' : undefined}>{t(name)}</a>)}
       </nav>
-      {layer === 'l0' && <Dashboard out={out} base={base} kb={kb} person={p2} onGo={goLayer} whatif={whatif} />}
+      {layer === 'l0' && <Dashboard out={out} base={base} kb={kbL} person={p2} onGo={goLayer} whatif={whatif} />}
       {layer === 'l1' && <L1 {...props} />}
       {layer === 'l2' && <L2 {...props} />}
       {layer === 'l3' && <L3 {...props} />}
       {layer === 'l4' && <L4 {...props} />}
-      {layer === 'l5' && <L5 {...props} />}
+      {layer === 'l5' && <L5 {...props} compare={compare} />}
       {layer === 'l6' && <L6 {...props} />}
       {layer === 'l7' && <L7 {...props} meta={{ runId: baseRun?.runId, simulated: stu.simulated }} />}
-      {layer !== 'l0' && dirty && <p className="small muted" style={{ marginTop: 8 }}>Đang hiển thị theo kịch bản What-if (xem/đặt lại ở <a href="#" onClick={(e) => { e.preventDefault(); goLayer('whatif'); }}>L0</a>).</p>}
+      {layer !== 'l0' && dirty && <p className="small muted" style={{ marginTop: 8 }}>{t('Đang hiển thị theo kịch bản What-if (xem/đặt lại ở')} <a href="#" onClick={(e) => { e.preventDefault(); goLayer('whatif'); }}>L0</a>).</p>}
     </>
   );
 }

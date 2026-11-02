@@ -175,6 +175,36 @@ describe('Client What-if = server (engine dùng chung)', () => {
   });
 });
 
+describe('Pha 4 – đáp án nhiệm vụ test khớp engine', () => {
+  const top = async (user, id, body = {}) => (await request(app).post(`/api/students/${id}/runs`).set(as(user)).send({ save: false, ...body })).body.result;
+  it('PH: SIM-HS002 Top-1 P03 Thử thách, tăng SK07 +1 → Ưu tiên', async () => {
+    const r = await top('sim-ph001', 'SIM-HS002', { persona: 'PH' });
+    expect([r.top[0].profile, r.top[0].label]).toEqual(['P03', 'Thử thách']);
+    const w = await top('sim-ph001', 'SIM-HS002', { persona: 'PH', delta: { 7: 1 } });
+    expect([w.top[0].profile, w.top[0].label]).toEqual(['P03', 'Ưu tiên']);
+  });
+  it('HS001: Top-1 P06 theo cả 3 persona', async () => {
+    for (const persona of ['HS', 'PH', 'TVV']) expect((await top('sim-tvv01', 'SIM-HS001', { persona })).top[0].profile).toBe('P06');
+  });
+});
+
+describe('Pha 4 – buổi test khả dụng + SUS', () => {
+  const body = { participantCode: 'U99', role: 'student', uiVersion: 'test', device: 'vitest', consent: true,
+    tasks: [1, 2, 3].map((n) => ({ taskNo: n, testCaseCode: ['TC01', 'TC02', 'TC05'][n - 1], timeSec: 30 * n, errors: n - 1, success: n < 3 })),
+    sus: [4, 2, 4, 2, 4, 2, 4, 2, 4, 2] };
+  it('TVV ghi buổi test → SUS 75 khớp view v_sus_score; HS/Admin chỉ-xem bị chặn; xóa bằng Admin hệ thống', async () => {
+    expect((await request(app).post('/api/usability/sessions').set(as('sim-hs001')).send(body)).status).toBe(403);
+    expect((await request(app).post('/api/usability/sessions').set(as('sim-ad03')).send(body)).status).toBe(403);
+    expect((await request(app).post('/api/usability/sessions').set(as('sim-tvv01')).send({ ...body, participantCode: 'Nguyen An' })).status).toBe(400);
+    const r = await request(app).post('/api/usability/sessions').set(as('sim-tvv01')).send(body);
+    expect(r.status).toBe(201); expect(r.body.sus).toBe(75);
+    const rep = (await request(app).get('/api/usability/report').set(as('sim-ad04'))).body.sessions.find((s) => s.id === r.body.id);
+    expect(rep.sus).toBe(75); expect(rep.tasks).toHaveLength(3); expect(rep.answers).toEqual(body.sus);
+    expect((await request(app).delete(`/api/usability/sessions/${r.body.id}`).set(as('sim-ad01'))).status).toBe(403);
+    expect((await request(app).delete(`/api/usability/sessions/${r.body.id}`).set(as('sim-ad04'))).status).toBe(204);
+  });
+});
+
 describe('Cảnh báo ngoài phạm vi (TC-E1 … TC-E6)', () => {
   const cases = [['SIM-HS071', ['V_DOB']], ['SIM-HS072', ['V_TZ']], ['SIM-HS073', ['V_MAJOR']], ['SIM-HS074', ['V_EC0']],
     ['SIM-HS075', ['V_EC0', 'V_CONFLICT']], ['SIM-HS011', ['V_CHAR', 'V_NAME_LEN']]];

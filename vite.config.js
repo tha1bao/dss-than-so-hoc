@@ -7,6 +7,7 @@ export default defineConfig({
   test: {
     include: ['scripts/**/*.test.js', 'tests/**/*.test.js'],
     testTimeout: 60000,
+    fileParallelism: false, // 2 file hồi quy nạp fixture lớn – chạy song song dễ hết bộ nhớ
     exclude: ['tests/api.test.js', '**/node_modules/**'], // test API cần DB thật → npm run test:api
   },
 });

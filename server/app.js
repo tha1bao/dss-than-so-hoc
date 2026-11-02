@@ -8,6 +8,7 @@ import { login, authenticate, requireRole, requireAdminScope, visibleStudentIds,
 import { audit } from './audit.js';
 import { loadStudent, loadStudents, sanitizeOptions, redactSignals, computeFor, persistRun } from './compute.js';
 import { ENGINE_VERSION, LABELS } from '../shared/engine/index.js';
+import { validateSession, susScore } from '../shared/usability.js';
 
 export const app = express();
 app.disable('x-powered-by');
@@ -163,6 +164,55 @@ api.put('/admin/number-meanings/:id', authenticate(), requireAdminScope('kb'), a
   });
   invalidateKb();
   res.json(result);
+});
+
+// ---------------- Pha 4: test khả dụng + SUS (người điều phối = TVV hoặc Admin không phải chỉ-xem) ----------------
+const canRunTests = (req, _res, next) => (req.user.role === 'counselor' || (req.user.role === 'admin' && !['auditor', 'demo'].includes(req.user.scope))
+  ? next() : next(HttpError(403, 'Chỉ tư vấn viên hoặc quản trị (không phải chỉ-xem) được ghi buổi test')));
+
+api.post('/usability/sessions', authenticate(), canRunTests, async (req, res) => {
+  const s = req.body;
+  const errs = validateSession(s);
+  if (errs.length) throw HttpError(400, errs.join('; '));
+  const dt = (x) => (x ? new Date(x).toISOString().slice(0, 19).replace('T', ' ') : null);
+  const id = await tx(async (conn) => {
+    const [r] = await conn.execute(`INSERT INTO usability_session (participant_code, role, ui_version, device, consent, started_at, ended_at, notes, created_by)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, [s.participantCode, s.role, s.uiVersion, String(s.device ?? '').slice(0, 40) || null, true,
+      dt(s.startedAt) ?? dt(Date.now()), dt(s.endedAt), s.notes ? String(s.notes).slice(0, 4000) : null, req.user.id]);
+    const sid = String(r.insertId);
+    for (const t of s.tasks) {
+      await conn.execute('INSERT INTO usability_task (session_id, task_no, test_case_code, time_sec, errors, success, observation) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [sid, t.taskNo, t.testCaseCode || null, t.timeSec, t.errors, t.success, t.observation ? String(t.observation).slice(0, 2000) : null]);
+    }
+    for (const [i, v] of s.sus.entries()) await conn.execute('INSERT INTO sus_answer (session_id, item_no, score) VALUES (?, ?, ?)', [sid, i + 1, v]);
+    await audit({ conn, userId: req.user.id, action: 'INSERT', table: 'usability_session', rowKey: sid,
+      after: { participant: s.participantCode, role: s.role, ui: s.uiVersion }, requestId: req.id });
+    return sid;
+  });
+  res.status(201).json({ id, sus: susScore(s.sus) });
+});
+
+api.get('/usability/report', authenticate(), requireRole('admin', 'counselor'), async (_req, res) => {
+  const [sessions, tasks] = await Promise.all([
+    q(`SELECT s.id, s.participant_code, s.role, s.ui_version, s.device, s.started_at, s.ended_at, s.notes, v.sus, v.n_items
+       FROM usability_session s LEFT JOIN v_sus_score v ON v.session_id = s.id ORDER BY s.started_at`),
+    q('SELECT t.*, c.title_vi FROM usability_task t LEFT JOIN test_case c ON c.code = t.test_case_code ORDER BY t.session_id, t.task_no'),
+  ]);
+  const answers = await q('SELECT session_id, item_no, score FROM sus_answer ORDER BY session_id, item_no');
+  res.json({ sessions: sessions.map((s) => ({ ...s, sus: s.sus == null ? null : Number(s.sus), tasks: tasks.filter((t) => t.session_id === s.id),
+    answers: answers.filter((a) => a.session_id === s.id).map((a) => a.score) })) });
+});
+
+/** Xóa buổi test nhập nhầm (Admin hệ thống), có audit. */
+api.delete('/usability/sessions/:id', authenticate(), requireAdminScope('system'), async (req, res) => {
+  await tx(async (conn) => {
+    const [[before]] = await conn.execute('SELECT * FROM usability_session WHERE id = ?', [req.params.id]);
+    if (!before) throw HttpError(404, 'Không tìm thấy buổi test');
+    await conn.execute('DELETE FROM usability_session WHERE id = ?', [req.params.id]);
+    await audit({ conn, userId: req.user.id, action: 'DELETE', table: 'usability_session', rowKey: req.params.id,
+      before: { participant: before.participant_code, role: before.role, ui: before.ui_version }, reason: 'Xóa buổi test nhập nhầm', requestId: req.id });
+  });
+  res.status(204).end();
 });
 
 // ---------------- lỗi ----------------

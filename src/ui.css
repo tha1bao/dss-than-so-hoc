@@ -4,6 +4,7 @@
   --paper: #eef2ef; --grid: #dfe6e1; --surface: #fcfcfb; --surface-2: #f3f5f3;
   --ink: #1d2b45; --ink-2: #4a5772; --ink-3: #6b7489; --line: #cdd6d0; --line-2: #e3e8e4;
   --c-nf: #184f95; --c-sr: #2a78d6; --c-env: #86b6ef;           /* α·NF* · β·SR* · γ·ENV* */
+  --c-v2: #eb6834;                                               /* phiên bản giao diện thứ 2 (báo cáo SUS) */
   --focus: #2a78d6;
   --good: #0ca30c; --good-ink: #1f6b4c; --good-bg: #d6efe3;
   --warn: #fab219; --warn-ink: #75550f; --warn-bg: #f6e8c4;
@@ -17,7 +18,7 @@
   :root:where(:not([data-theme="light"])) {
     --paper: #121a27; --grid: #172133; --surface: #1a2232; --surface-2: #202a3c;
     --ink: #e8edf5; --ink-2: #b0bacb; --ink-3: #8f9ab0; --line: #34415a; --line-2: #2a354a;
-    --c-nf: #86b6ef; --c-sr: #3987e5; --c-env: #1c5cab; --focus: #6da7ec;
+    --c-nf: #86b6ef; --c-sr: #3987e5; --c-env: #1c5cab; --c-v2: #d95926; --focus: #6da7ec;
     --good-ink: #7fd3ac; --good-bg: #183a2d; --warn-ink: #f0cf7e; --warn-bg: #3a3120; --bad-ink: #f3a3a3; --bad-bg: #432427;
     --muted-bg: #2a3445; --muted-ink: #b2bccb;
     color-scheme: dark;
@@ -26,7 +27,7 @@
 :root[data-theme="dark"] {
   --paper: #121a27; --grid: #172133; --surface: #1a2232; --surface-2: #202a3c;
   --ink: #e8edf5; --ink-2: #b0bacb; --ink-3: #8f9ab0; --line: #34415a; --line-2: #2a354a;
-  --c-nf: #86b6ef; --c-sr: #3987e5; --c-env: #1c5cab; --focus: #6da7ec;
+  --c-nf: #86b6ef; --c-sr: #3987e5; --c-env: #1c5cab; --c-v2: #d95926; --focus: #6da7ec;
   --good-ink: #7fd3ac; --good-bg: #183a2d; --warn-ink: #f0cf7e; --warn-bg: #3a3120; --bad-ink: #f3a3a3; --bad-bg: #432427;
   --muted-bg: #2a3445; --muted-ink: #b2bccb;
   color-scheme: dark;

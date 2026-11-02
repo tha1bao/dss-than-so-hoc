@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { GROUPS, SKILL_ARCHS, skillCode } from '../../shared/engine/index.js';
 import { fmt, signed, skillName, envName, groupName, PERSONA_NAME, SET_NAME } from '../format.js';
+import { t, tr, num, localizeKb } from '../i18n.js';
 
 const Seg = ({ value, options, onChange, label }) => (
   <div className="seg" role="group" aria-label={label}>
@@ -31,18 +32,18 @@ export default function WhatIf({ kb, out, base, opt, setOpt, person, target, set
     <div className="wi">
       <div className="panel-head" style={{ marginBottom: 0 }}>
         <h2 id="z-d">What-if</h2>
-        <span className="zone-tag">khu vực d · tính lại ngay</span>
+        <span className="zone-tag">{t('khu vực d · tính lại ngay')}</span>
       </div>
 
       <fieldset>
-        <legend>Góc nhìn (persona) & bộ trọng số</legend>
+        <legend>{t('Góc nhìn (persona) & bộ trọng số')}</legend>
         <div style={{ display: 'grid', gap: 6 }}>
           <Seg label="Persona" value={opt.persona} onChange={(v) => set({ persona: v })} options={Object.entries(PERSONA_NAME)} />
-          <Seg label="Bộ trọng số" value={custom ? 'custom' : (opt.wset ?? kb.paramSet.code)}
+          <Seg label={t('Bộ trọng số')} value={custom ? 'custom' : (opt.wset ?? kb.paramSet.code)}
             onChange={(v) => setOpt((o) => { const { weights: _w, ...rest } = o; return { ...rest, wset: v, normalize: kb.sets.find((s) => s.code === v)?.normalize }; })}
             options={kb.sets.map((s) => [s.code, SET_NAME[s.code] ?? s.code])} />
-          <label className="checks"><input type="checkbox" checked={out.result.normalize} onChange={(e) => set({ normalize: e.target.checked })} /> Chuẩn hóa min–max (mặc định bật)</label>
-          <label className="checks"><input type="checkbox" checked={custom} onChange={(e) => (e.target.checked ? set({ weights: [...w] }) : setOpt((o) => { const { weights: _w, ...r } = o; return r; }))} /> Tự chỉnh α/β/γ (tự quy về tổng 1)</label>
+          <label className="checks"><input type="checkbox" checked={out.result.normalize} onChange={(e) => set({ normalize: e.target.checked })} /> {t('Chuẩn hóa min–max (mặc định bật)')}</label>
+          <label className="checks"><input type="checkbox" checked={custom} onChange={(e) => (e.target.checked ? set({ weights: [...w] }) : setOpt((o) => { const { weights: _w, ...r } = o; return r; }))} /> {t('Tự chỉnh α/β/γ (tự quy về tổng 1)')}</label>
           {['α · NF', 'β · SR', 'γ · ENV'].map((n, i) => (
             <div key={n} className="slider">
               <span>{n}</span>
@@ -54,7 +55,7 @@ export default function WhatIf({ kb, out, base, opt, setOpt, person, target, set
       </fieldset>
 
       <fieldset>
-        <legend>Tín hiệu thần số học</legend>
+        <legend>{t('Tín hiệu thần số học')}</legend>
         <div className="checks">
           {GROUPS.map((g) => (
             <label key={g} title={groupName(kb, g)}>
@@ -64,27 +65,27 @@ export default function WhatIf({ kb, out, base, opt, setOpt, person, target, set
           ))}
         </div>
         <div className="checks" style={{ marginTop: 4 }}>
-          <label><input type="checkbox" checked={opt.positional !== false} onChange={(e) => set({ positional: e.target.checked ? undefined : false })} /> Trọng số vị trí p = 1 / 0,8 / 0,6</label>
-          <label><input type="checkbox" checked={!!opt.yVowel} onChange={(e) => set({ yVowel: e.target.checked || undefined })} /> Y là nguyên âm (chỉ đổi SU → SAT)</label>
+          <label><input type="checkbox" checked={opt.positional !== false} onChange={(e) => set({ positional: e.target.checked ? undefined : false })} /> {t('Trọng số vị trí p = 1 / 0,8 / 0,6')}</label>
+          <label><input type="checkbox" checked={!!opt.yVowel} onChange={(e) => set({ yVowel: e.target.checked || undefined })} /> {t('Y là nguyên âm (chỉ đổi SU → SAT)')}</label>
         </div>
       </fieldset>
 
       <fieldset>
-        <legend>Môi trường & ngành mục tiêu</legend>
+        <legend>{t('Môi trường & ngành mục tiêu')}</legend>
         <div style={{ display: 'grid', gap: 6 }}>
-          <select value={opt.envOverride ?? ''} onChange={(e) => set({ envOverride: e.target.value || undefined })} aria-label="Môi trường mong muốn">
-            <option value="">Môi trường: {envName(kb, person.env)} (đã khai)</option>
-            {Object.keys(kb.envs).filter((e) => e !== person.env).map((e) => <option key={e} value={e}>Thử: {envName(kb, e)}</option>)}
+          <select value={opt.envOverride ?? ''} onChange={(e) => set({ envOverride: e.target.value || undefined })} aria-label={t('Môi trường mong muốn')}>
+            <option value="">{t('Môi trường')}: {envName(kb, person.env)} ({tr('đã khai', 'declared')})</option>
+            {Object.keys(kb.envs).filter((e) => e !== person.env).map((e) => <option key={e} value={e}>{tr('Thử', 'Try')}: {envName(kb, e)}</option>)}
           </select>
-          <input type="search" list="majors-300" placeholder="Gõ tên ngành (300 ngành)…" value={target ?? ''} onChange={(e) => setTarget(e.target.value)} aria-label="Ngành mục tiêu" />
+          <input type="search" list="majors-300" placeholder={t('Gõ tên ngành (300 ngành)…')} value={target ?? ''} onChange={(e) => setTarget(e.target.value)} aria-label={t('Ngành mục tiêu')} />
           <datalist id="majors-300">{kb.majors.map((m) => <option key={m.id} value={m.name_vi} />)}</datalist>
         </div>
       </fieldset>
 
       <fieldset>
         <legend>
-          Kỹ năng tự đánh giá (1–5){' '}
-          <button type="button" className="btn ghost small" onClick={() => setShowSkills((x) => !x)}>{showSkills ? 'thu gọn' : 'mở'}</button>
+          {t('Kỹ năng tự đánh giá (1–5)')}{' '}
+          <button type="button" className="btn ghost small" onClick={() => setShowSkills((x) => !x)}>{showSkills ? t('thu gọn') : t('mở')}</button>
         </legend>
         {showSkills && (
           <div className="skills-wi">
@@ -94,9 +95,9 @@ export default function WhatIf({ kb, out, base, opt, setOpt, person, target, set
                 <div key={a} className={`sk ${now <= kb.params.Weak_max ? 'weak' : ''}`} title={skillName(kb, a)}>
                   <span className="sk-name">{skillCode(a)}</span>
                   <span className="stepper">
-                    <button type="button" aria-label={`Giảm ${skillCode(a)}`} onClick={() => setDelta(a, -1)} disabled={now <= 1}>−</button>
+                    <button type="button" aria-label={`${tr('Giảm', 'Decrease')} ${skillCode(a)}`} onClick={() => setDelta(a, -1)} disabled={now <= 1}>−</button>
                     <span className={`num ${delta[a] ? 'chg' : ''}`}>{now}{delta[a] ? <sup>{delta[a] > 0 ? '+' : ''}{delta[a]}</sup> : null}</span>
-                    <button type="button" aria-label={`Tăng ${skillCode(a)}`} onClick={() => setDelta(a, 1)} disabled={now >= 5}>+</button>
+                    <button type="button" aria-label={`${tr('Tăng', 'Increase')} ${skillCode(a)}`} onClick={() => setDelta(a, 1)} disabled={now >= 5}>+</button>
                   </span>
                 </div>
               );
@@ -106,15 +107,15 @@ export default function WhatIf({ kb, out, base, opt, setOpt, person, target, set
       </fieldset>
 
       <div className="diff" aria-live="polite">
-        <b>So với kết quả gốc</b>
-        <span>Top-1: {b1?.profile ?? '–'} ({b1?.label ?? '–'}) → <b>{c1?.profile ?? '–'}</b> ({c1?.label ?? '–'}) · C {fmt(c1?.C)} {b1 && c1 && b1.profile === c1.profile ? `(${signed(c1.C - b1.C)})` : ''}</span>
-        {ct && <span>Bước 5 – {out.target.major.name_vi}: SR {fmt(bt?.row.SR)} → <b>{fmt(ct.row.SR)}</b>; nhãn {bt?.row.label ?? '–'} → <b>{ct.row.label}</b>; còn {ct.stepsWeak} bậc để hết kỹ năng yếu, thiếu {fmt(ct.gap, 1)} điểm SR</span>}
-        <span className="muted">Độ ổn định Top-1: {base?.stability.count ?? '–'}/5 → {out.stability.count}/5</span>
+        <b>{t('So với kết quả gốc')}</b>
+        <span>Top-1: {b1?.profile ?? '–'} ({b1 ? t(b1.label) : '–'}) → <b>{c1?.profile ?? '–'}</b> ({c1 ? t(c1.label) : '–'}) · C {fmt(c1?.C)} {b1 && c1 && b1.profile === c1.profile ? `(${signed(c1.C - b1.C)})` : ''}</span>
+        {ct && <span>{tr('Bước 5', 'Step 5')} – {out.target.major.name_vi}: SR {fmt(bt?.row.SR)} → <b>{fmt(ct.row.SR)}</b>; {tr('nhãn', 'label')} {bt ? t(bt.row.label) : '–'} → <b>{t(ct.row.label)}</b>; {tr(`còn ${ct.stepsWeak} bậc để hết kỹ năng yếu, thiếu ${fmt(ct.gap, 1)} điểm SR`, `${ct.stepsWeak} level(s) left to clear weak skills, ${fmt(ct.gap, 1)} SR points short`)}</span>}
+        <span className="muted">{t('Độ ổn định Top-1')}: {base?.stability.count ?? '–'}/5 → {out.stability.count}/5</span>
       </div>
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-        <button type="button" className="btn" onClick={onReset} disabled={!changed}>Đặt lại</button>
-        {canSave && <button type="button" className="btn primary" onClick={onSave} disabled={!changed || saveState === 'saving'}>{saveState === 'saving' ? 'Đang lưu…' : 'Lưu kịch bản'}</button>}
-        {saveState?.startsWith?.('ok:') && <span className="small muted">Đã lưu lần tính #{saveState.slice(3, 9)}…</span>}
+        <button type="button" className="btn" onClick={onReset} disabled={!changed}>{t('Đặt lại')}</button>
+        {canSave && <button type="button" className="btn primary" onClick={onSave} disabled={!changed || saveState === 'saving'}>{saveState === 'saving' ? t('Đang lưu…') : t('Lưu kịch bản')}</button>}
+        {saveState?.startsWith?.('ok:') && <span className="small muted">{tr('Đã lưu lần tính', 'Saved run')} #{saveState.slice(3, 9)}…</span>}
         {saveState?.startsWith?.('err:') && <span className="small err">{saveState.slice(4)}</span>}
       </div>
     </div>

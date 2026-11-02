@@ -1,6 +1,7 @@
 // Phần tử dùng chung: tooltip, biểu tượng trạng thái (luôn kèm chữ – không dùng màu đơn lẻ), chip nhãn, thanh đóng góp C.
 import { createContext, useContext, useState, useCallback } from 'react';
 import { fmt, LABEL_CLASS } from '../format.js';
+import { t, tr, num, localizeKb } from '../i18n.js';
 
 // ---------- tooltip ----------
 const TipCtx = createContext(() => {});
@@ -34,10 +35,10 @@ export function StatusIcon({ level, size = 12 }) {
   return <svg {...s}><circle cx="6" cy="6" r="5" fill="none" stroke="var(--ink-3)" strokeWidth="1.4" /><path d="M3.6 6h4.8" stroke="var(--ink-3)" strokeWidth="1.4" /></svg>;
 }
 export const Status = ({ level, text }) => (
-  <span className={`status ${level}`}><StatusIcon level={level} />{text ?? STATUS_TEXT[level]}</span>
+  <span className={`status ${level}`}><StatusIcon level={level} />{text ?? t(STATUS_TEXT[level])}</span>
 );
 
-export const LabelChip = ({ label }) => <span className={`label ${LABEL_CLASS[label] ?? 'none'}`}>{label}</span>;
+export const LabelChip = ({ label }) => <span className={`label ${LABEL_CLASS[label] ?? 'none'}`}>{t(label)}</span>;
 
 export function Warnings({ warnings, showGrey = false }) {
   const main = warnings.filter((w) => w.level !== 'grey');
@@ -46,9 +47,9 @@ export function Warnings({ warnings, showGrey = false }) {
   return (
     <div className="warns" role="status">
       {main.map((w) => (
-        <div key={w.code} className={`warn ${w.level}`}><StatusIcon level={w.level} size={14} /><span><b>{w.level === 'red' ? 'Ngoài phạm vi' : 'Lưu ý'}:</b> {w.message} <span className="src">[{w.code}]</span></span></div>
+        <div key={w.code} className={`warn ${w.level}`}><StatusIcon level={w.level} size={14} /><span><b>{t(w.level === 'red' ? 'Ngoài phạm vi' : 'Lưu ý')}:</b> {num(w.message)} <span className="src">[{w.code}]</span></span></div>
       ))}
-      {showGrey && grey.map((w) => <div key={w.code} className="warn grey"><span>ⓘ {w.message} <span className="src">[{w.code}]</span></span></div>)}
+      {showGrey && grey.map((w) => <div key={w.code} className="warn grey"><span>ⓘ {num(w.message)} <span className="src">[{w.code}]</span></span></div>)}
     </div>
   );
 }
@@ -59,15 +60,15 @@ export const SEGMENTS = [
 ];
 export function ContribLegend() {
   return (
-    <div className="legend" aria-label="Chú giải">
-      {SEGMENTS.map(([k, cls, sym, name]) => <span key={k}><i style={{ background: `var(--c-${cls})` }} />{sym} – {name}</span>)}
+    <div className="legend" aria-label={t('Chú giải')}>
+      {SEGMENTS.map(([k, cls, sym, name]) => <span key={k}><i style={{ background: `var(--c-${cls})` }} />{sym} – {t(name)}</span>)}
     </div>
   );
 }
 /** Thanh ngang trên trục 0–1 (C tối đa = α+β+γ = 1). Không hiển thị %. */
 export function ContribBar({ row, weights, normalize }) {
   const tip = useTip();
-  if (!row.contrib) return <div className="bar-wrap"><span className="small muted">EC = 0 – không xếp hạng</span></div>;
+  if (!row.contrib) return <div className="bar-wrap"><span className="small muted">{t('EC = 0 – không xếp hạng')}</span></div>;
   const raw = { NF: normalize ? row.NF_n : row.NF, SR: normalize ? row.SR_n : row.SR, ENV: normalize ? row.ENV_n : row.ENV };
   const w = { NF: weights[0], SR: weights[1], ENV: weights[2] };
   return (
@@ -75,7 +76,7 @@ export function ContribBar({ row, weights, normalize }) {
       <div className="bar-track">
         {SEGMENTS.map(([k, cls, sym, name]) => row.contrib[k] > 1e-9 && (
           <div key={k} className={`bar-seg ${cls}`} style={{ flex: `0 0 calc(${row.contrib[k] * 100}% - 2px)` }} tabIndex={0}
-            {...tip(<><b>{sym} = {fmt(row.contrib[k])}</b><br />{name}: {fmt(w[k])} × {fmt(raw[k])}{normalize ? ' (đã chuẩn hóa min–max)' : ''}</>)} />
+            {...tip(<><b>{sym} = {fmt(row.contrib[k])}</b><br />{t(name)}: {fmt(w[k])} × {fmt(raw[k])}{normalize ? tr(' (đã chuẩn hóa min–max)', ' (min–max normalized)') : ''}</>)} />
         ))}
       </div>
     </div>
@@ -85,7 +86,7 @@ export function ContribBar({ row, weights, normalize }) {
 export const Axis01 = () => (
   <div className="rank-row axis-row" aria-hidden="true">
     <span />
-    <div className="axis">{[0, 0.25, 0.5, 0.75, 1].map((t) => <span key={t} style={{ left: `${t * 100}%` }}>{String(t).replace('.', ',')}</span>)}</div>
+    <div className="axis">{[0, 0.25, 0.5, 0.75, 1].map((t) => <span key={t} style={{ left: `${t * 100}%` }}>{fmt(t, t % 0.5 ? 2 : t % 1 ? 1 : 0)}</span>)}</div>
     <span className="c-col" />
   </div>
 );

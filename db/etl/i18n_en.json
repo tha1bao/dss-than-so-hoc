@@ -1,0 +1,36 @@
+{
+  "_note": "Bản tiếng Anh của mẫu câu 'Vì sao?' và cảnh báo ngoài phạm vi (Pha 4 – localization). Dịch sát bản tiếng Việt, cùng biến {…}; không thêm quy tắc mới.",
+  "templates": {
+    "WHY_C": "{profile} has a relative fit level of {C}, ranked {rank}/{n_ranked}. Contributions: numerology α·NF* = {c_nf}, skills β·SR* = {c_sr}, environment γ·ENV* = {c_env}. This is not a probability of success.",
+    "WHY_NF": "{ec}/5 signal groups match the profile's archetypes ({groups}). NF = {nf}.",
+    "WHY_NF_NONE": "No signal group matches the profile's archetypes (EC = 0), so the profile is not ranked.",
+    "WHY_SR": "Self-rated skills for the profile's 3 archetypes: {kn}. SR = {sr} ({sr_cmp} threshold 0.625 ⇔ average 3.5/5).",
+    "WHY_ENV_YES": "Your preferred environment ({env}) matches the profile's typical environment.",
+    "WHY_ENV_NO": "Your preferred environment ({env}) differs from the profile's environment ({profile_env}).",
+    "LABEL_NONE": "Label \"Not recommended\": rule 1 – EC = 0.",
+    "LABEL_CHALLENGE": "Label \"Challenge\": rule 2 – has skills ≤ 2 ({weak}).",
+    "LABEL_PRIORITY": "Label \"Priority\": rule 3 – EC = {ec} ≥ 2 and SR = {sr} ≥ 0.625, no weak skills.",
+    "LABEL_CONSIDER": "Label \"Consider\": rule 4 – no weak skills but not yet EC ≥ 2 and SR ≥ 0.625 ({why}).",
+    "BEST_PRIORITY": "Top-1 is currently \"Challenge\". The best \"Priority\" profile is {profile} (rank {rank}).",
+    "TIE": "{n} profiles share the level {C}; their order follows the tie-break rule (the profile listed first among the 35 profiles).",
+    "STEP5": "For {target} to reach \"Priority\": raise weak skills by {steps_weak} level(s) and make up {gap} weighted points to SR_min (≈ {steps_main} level(s) in the main skills).",
+    "STEP5_EC_LOW": "{target}: at most \"Consider\" because EC = {ec} < 2 – numerology signals are fixed and cannot be improved through skills.",
+    "STEP5_EC0": "{target}: EC = 0 – no numerology signal supports it (fixed).",
+    "DISCLAIMER": "Reference system on simulated data. Numerology has no scientific predictive value (E10)."
+  },
+  "rules": {
+    "V_DOB": "Birth year outside the data range 2009–2011",
+    "V_NAME_LEN": "Name is not 3 syllables (standard data: 3)",
+    "V_CHAR": "Name has characters outside A–Z – removed for calculation",
+    "V_TZ": "Contains digraph TZ – KB04 applied (differs from Excel v6)",
+    "V_MAJOR": "Target major is not among the 300 majors – cannot be scored",
+    "V_EC0": "Target major has EC = 0 – profile excluded from ranking",
+    "V_EC1": "Only 1 signal group supports it – weak evidence",
+    "V_ONE_PROFILE": "Only 1 eligible profile – min–max normalization is not meaningful",
+    "V_CONFLICT": "Conflict: high skill readiness but no numerology signal – present both sides",
+    "V_TIE": "Some profiles are tied – order follows the tie-break rule (profile listed first)",
+    "V_SELF": "Skills are self-assessed (Data_Gap #6)",
+    "V_ADMIT": "No admission cut-off data for this major yet",
+    "V_SIM": "Simulated data – numerology has no scientific predictive value (E10)"
+  }
+}

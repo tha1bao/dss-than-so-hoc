@@ -221,7 +221,8 @@ try {
   ];
   await insert('threshold', SETS.flatMap((s) => TH.map(([k, level, mn, mx, txt, why]) => ({ param_set_id: setId[s.code], kpi_code: k, level,
     min_value: mn, max_value: mx, match_text: txt, rationale: why + ' (mục 1.5 – nhóm duyệt D10)' }))));
-  const VR = (code, level, cond, msg, params = null) => ({ code, level, condition_text: cond, message_vi: msg, message_en: null, params_json: params, src_ref: 'ASS3 Pha 0–1 › mục 1.7; CLAUDE.md' });
+  const EN = JSON.parse(fs.readFileSync(new URL('./i18n_en.json', import.meta.url), 'utf8')); // bản tiếng Anh (Pha 4)
+  const VR = (code, level, cond, msg, params = null) => ({ code, level, condition_text: cond, message_vi: msg, message_en: EN.rules[code] ?? null, params_json: params, src_ref: 'ASS3 Pha 0–1 › mục 1.7; CLAUDE.md' });
   await insert('validity_rule', [
     VR('V_DOB', 'yellow', 'năm sinh ngoài 2009–2011', 'Năm sinh ngoài dải dữ liệu 2009–2011', { year_min: 2009, year_max: 2011 }),
     VR('V_NAME_LEN', 'yellow', 'số âm tiết của tên ≠ 3', 'Tên không phải 3 âm tiết (dữ liệu chuẩn: 3)', { syllables: 3 }),
@@ -239,7 +240,7 @@ try {
   ]);
 
   // mẫu câu "Vì sao?" – chỉ diễn giải công thức đã có (F-*), không thêm quy tắc thần số học mới
-  const T = (code, layer, vi) => ({ code, layer, template_vi: vi, template_en: null });
+  const T = (code, layer, vi) => ({ code, layer, template_vi: vi, template_en: EN.templates[code] ?? null });
   await insert('explanation_template', [
     T('WHY_C', 'L1', '{profile} có mức tương hợp tương đối {C}, xếp hạng {rank}/{n_ranked}. Đóng góp: thần số học α·NF* = {c_nf}, kỹ năng β·SR* = {c_sr}, môi trường γ·ENV* = {c_env}. Đây không phải xác suất thành công.'),
     T('WHY_NF', 'L1', '{ec}/5 nhóm tín hiệu khớp archetype của hồ sơ ({groups}). NF = {nf}.'),
