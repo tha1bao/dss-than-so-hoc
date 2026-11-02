@@ -7,14 +7,24 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "verify": "vitest run"
+    "verify": "vitest run",
+    "server": "node server/index.js",
+    "test:api": "vitest run --config vitest.db.config.js",
+    "etl:prepare": "python db/etl/prepare.py",
+    "etl:load": "node db/etl/etl.js --reset"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^18.0.9",
+    "express": "^5.3.0",
+    "jsonwebtoken": "^9.0.3",
+    "mysql2": "^3.24.6",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.7.0",
+    "supertest": "^7.3.1",
     "vite": "^5.4.21",
     "vitest": "^2.1.9"
   }

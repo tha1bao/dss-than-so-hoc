@@ -1,113 +1,93 @@
-import { useEffect, useMemo, useState } from 'react';
-import { makeT } from './i18n.js';
-import { computeProfile } from './lib/numerology.js';
-import { scoreAll, defaultOptions, SKILLS, PARAMS } from './lib/engine.js';
-import SAMPLES from './data/samples.json';
-import InputPanel from './components/InputPanel.jsx';
-import ProfileCard from './components/ProfileCard.jsx';
-import Results from './components/Results.jsx';
-import WhatIf from './components/WhatIf.jsx';
-import AllProfiles from './components/AllProfiles.jsx';
+// Khung ứng dụng: định tuyến theo hash, phiên đăng nhập, giao diện sáng/tối, chân trang bắt buộc (dữ liệu mô phỏng + E10).
+import { useEffect, useState } from 'react';
+import { ENGINE_VERSION } from '../shared/engine/index.js';
+import { getSession, setSession } from './api.js';
+import { ROLE_NAME } from './format.js';
+import { TipProvider } from './components/common.jsx';
+import StudentView from './pages/StudentView.jsx';
+import { Login, StudentList, GuestForm, Admin } from './pages/Pages.jsx';
 
-const SAMPLE_ORDER = ['HS001', 'HS021', 'HS015'];
+function parseHash() {
+  const h = window.location.hash.replace(/^#/, '') || '/';
+  const [path, qs = ''] = h.split('?');
+  return { parts: path.split('/').filter(Boolean), query: new URLSearchParams(qs) };
+}
+const go = (path) => { window.location.hash = path; };
 
-function formFromSample(id) {
-  const s = SAMPLES.find((x) => x.id === id);
-  return { name: s.name, dob: s.dob, skills: { ...s.skills }, top: s.top, env: s.env, sampleId: id };
+function useTheme() {
+  const [theme, setTheme] = useState(() => { try { return localStorage.getItem('dss.theme') || 'auto'; } catch { return 'auto'; } });
+  useEffect(() => {
+    const el = document.documentElement;
+    if (theme === 'auto') el.removeAttribute('data-theme'); else el.setAttribute('data-theme', theme);
+    try { localStorage.setItem('dss.theme', theme); } catch { /* bỏ qua */ }
+  }, [theme]);
+  return [theme, () => setTheme((t) => ({ auto: 'light', light: 'dark', dark: 'auto' }[t]))];
 }
 
-/** Điểm mạnh (Q5, STR) = 3 kỹ năng có điểm cao nhất; bằng điểm thì kỹ năng đứng trước trong danh sách SK01…SK33. */
-export function topStrengths(skills) {
-  return SKILLS.map((code, i) => ({ code, v: skills[code], i }))
-    .sort((a, b) => b.v - a.v || a.i - b.i)
-    .slice(0, 3)
-    .map((x) => Number(x.code.slice(2)));
-}
-
-export function validate(form) {
-  const errors = {};
-  if (form.name.trim().split(/\s+/).filter((w) => /\p{L}/u.test(w)).length < 2) errors.name = true;
-  const y = Number(form.dob.slice(0, 4));
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(form.dob) || y < 1950 || y > 2020) errors.dob = true;
-  if (!form.env) errors.env = true;
-  return errors;
+function homeFor(user) {
+  if (!user) return '/login';
+  if (user.role === 'student') return `/s/${user.personCode}/l0`;
+  return '/students';
 }
 
 export default function App() {
-  const [lang, setLang] = useState('vi');
-  const [form, setForm] = useState(() => formFromSample('HS001'));
-  const [opt, setOpt] = useState(defaultOptions);
-  const t = makeT(lang);
-  useEffect(() => { document.documentElement.lang = lang; }, [lang]);
+  const [route, setRoute] = useState(parseHash);
+  const [session, setSess] = useState(getSession);
+  const [guest, setGuest] = useState(null);
+  const [theme, cycleTheme] = useTheme();
+  const user = session?.user ?? null;
 
-  const errors = validate(form);
-  const profileOk = !errors.name && !errors.dob;
-  const ready = Object.keys(errors).length === 0;
+  useEffect(() => {
+    const onHash = () => setRoute(parseHash());
+    const onLogout = () => setSess(null);
+    window.addEventListener('hashchange', onHash);
+    window.addEventListener('dss:logout', onLogout);
+    return () => { window.removeEventListener('hashchange', onHash); window.removeEventListener('dss:logout', onLogout); };
+  }, []);
+  useEffect(() => { window.scrollTo(0, 0); }, [route.parts.join('/')]);
 
-  const profile = useMemo(() => (profileOk ? computeProfile(form.name, form.dob) : null),
-    [profileOk, form.name, form.dob]);
-
-  const student = useMemo(() => {
-    if (!ready || !profile) return null;
-    return {
-      signals: profile.signals,
-      skills: form.skills,
-      top: form.top ?? topStrengths(form.skills),
-      env: form.env,
-    };
-  }, [ready, profile, form]);
-
-  const result = useMemo(() => (student ? scoreAll(student, opt) : null), [student, opt]);
-  const baseline = useMemo(() => (student ? scoreAll(student, defaultOptions()) : null), [student]);
-
-  // Sửa kỹ năng thì điểm mạnh được tính lại từ 12 mức (hồ sơ mẫu giữ top_strength gốc của dữ liệu)
-  const updateForm = (patch) => setForm((f) => ({ ...f, ...patch, sampleId: null,
-    top: 'skills' in patch ? null : f.top }));
-  const loadSample = (id) => { setForm(formFromSample(id)); setOpt(defaultOptions()); };
+  const logout = () => { setSession(null); setSess(null); setGuest(null); go('/login'); };
+  const [p0, p1, p2] = route.parts;
+  let page;
+  if (p0 === 'guest') {
+    if (p1 && guest) page = <StudentView source={{ kind: 'guest', person: guest }} user={null} layer={p1} sel={route.query.get('p')} go={go} />;
+    else page = <GuestForm initial={guest} onSubmit={(g) => { setGuest(g); go('/guest/l0'); }} />;
+  } else if (!user) {
+    page = <Login onLogin={(s) => { setSess(s); go(homeFor(s.user)); }} />;
+  } else if (p0 === 's' && p1) {
+    page = <StudentView key={p1} source={{ kind: 'student', id: p1 }} user={user} layer={p2 ?? 'l0'} sel={route.query.get('p')} go={go} />;
+  } else if (p0 === 'students' && user.role !== 'student') {
+    page = <StudentList user={user} go={go} />;
+  } else if (p0 === 'admin' && user.role === 'admin') {
+    page = <Admin user={user} />;
+  } else {
+    setTimeout(() => go(homeFor(user)), 0);
+    page = null;
+  }
 
   return (
-    <div className="page">
-      <header className="masthead">
-        <div className="masthead-text">
-          <p className="course">{t.course}</p>
-          <h1>{t.title}</h1>
-          <p className="lede">{t.subtitle}</p>
-        </div>
-        <button type="button" className="lang" onClick={() => setLang(lang === 'vi' ? 'en' : 'vi')}
-          lang={lang === 'vi' ? 'en' : 'vi'}>
-          {t.langSwitch}
-        </button>
-      </header>
-
-      <main className="layout">
-        <aside className="side">
-          <InputPanel t={t} form={form} errors={errors} onChange={updateForm}
-            samples={SAMPLE_ORDER.map((id) => SAMPLES.find((s) => s.id === id))}
-            onSample={loadSample} strengths={form.top ?? topStrengths(form.skills)} />
-          {student && (
-            <WhatIf t={t} opt={opt} setOpt={setOpt} student={student} result={result}
-              onReset={() => setOpt({ ...defaultOptions(), targetMajor: opt.targetMajor })}
-              personas={PARAMS.personas} />
-          )}
-        </aside>
-
-        <section className="main">
-          {profile && <ProfileCard t={t} profile={profile} flags={opt.flags} />}
-          {result ? (
-            <>
-              <Results t={t} result={result} baseline={baseline} opt={opt} />
-              <AllProfiles t={t} result={result} />
-            </>
-          ) : (
-            <p className="empty">{t.emptyResult}</p>
-          )}
-        </section>
-      </main>
-
-      <footer className="foot">
-        <p>{t.footer}</p>
-        <p>{t.footerVerify}</p>
-      </footer>
-    </div>
+    <TipProvider>
+      <div className="shell">
+        <header className="topbar">
+          <div className="brand">
+            <h1><a href="#/" style={{ textDecoration: 'none' }}>DSS gợi ý nhóm ngành theo thần số học</a></h1>
+            <small>DSS301 · Nhóm 2 · ASS3 – Pythagoras · Kabala · Vệ Đà + kỹ năng tự đánh giá + môi trường mong muốn</small>
+          </div>
+          <span className="sim-badge">Dữ liệu mô phỏng</span>
+          {user && user.role === 'admin' && <a className="btn" href="#/admin">Quản trị</a>}
+          {user && user.role !== 'student' && <a className="btn" href="#/students">Danh sách</a>}
+          <button type="button" className="btn" onClick={cycleTheme} title="Đổi giao diện">{{ auto: 'Giao diện: theo máy', light: 'Giao diện: sáng', dark: 'Giao diện: tối' }[theme]}</button>
+          {user ? (
+            <span className="who"><span className="role-chip">{ROLE_NAME[user.role]}</span>{user.displayName}<button type="button" className="btn" onClick={logout}>Đăng xuất</button></span>
+          ) : p0 === 'guest' ? <a className="btn" href="#/login">Đăng nhập</a> : null}
+        </header>
+        <main>{page}</main>
+        <footer className="foot">
+          <p><b>Dữ liệu mô phỏng</b> – học sinh, phụ huynh, tư vấn viên trên trang này là người giả lập, không phải người thật.</p>
+          <p>Thần số học không có giá trị dự báo khoa học (E10). Kết quả chỉ là gợi ý để trao đổi cùng gia đình và tư vấn viên – không thay thế tư vấn hướng nghiệp, năng lực học tập và điểm thi.</p>
+          <p className="muted">Engine {ENGINE_VERSION} · khớp engine.py và DSS_ASS2_ThanSoHoc_v6.xlsx (test hồi quy) · mặc định bộ trọng số A (ROC) + chuẩn hóa min–max.</p>
+        </footer>
+      </div>
+    </TipProvider>
   );
 }

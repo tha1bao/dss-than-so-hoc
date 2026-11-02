@@ -3,5 +3,10 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
-  test: { include: ['scripts/**/*.test.js'] },
+  server: { proxy: { '/api': 'http://localhost:3001' } },
+  test: {
+    include: ['scripts/**/*.test.js', 'tests/**/*.test.js'],
+    testTimeout: 60000,
+    exclude: ['tests/api.test.js', '**/node_modules/**'], // test API cần DB thật → npm run test:api
+  },
 });
