@@ -3,14 +3,16 @@ import { useEffect, useMemo, useState } from 'react';
 import { computeSignals } from '../../shared/engine/index.js';
 import { computeView, sanitizeOptions, findMajor } from '../../shared/engine/view.js';
 import { api, getKnowledge } from '../api.js';
-import { envName, ROLE_NAME } from '../format.js';
+import { envName } from '../format.js';
 import Dashboard from '../components/Dashboard.jsx';
 import { L1, L2, L3, L4, L5, L6, L7 } from '../components/Layers.jsx';
-import { t, tr, num, localizeKb } from '../i18n.js';
+import { t, tr, localizeKb } from '../i18n.js';
 
 export const LAYERS = [
-  ['l0', 'L0 Tổng quan'], ['l1', 'L1 Vì sao?'], ['l2', 'L2 Tín hiệu'], ['l3', 'L3 Ánh xạ'], ['l4', 'L4 Công thức'],
-  ['l5', 'L5 Tính chi tiết'], ['l6', 'L6 Tri thức nguồn'], ['l7', 'L7 Dữ liệu & lineage'],
+  ['l0', 'L0 Tổng quan', ''], ['l1', 'L1 Vì sao?', 'phân rã C của từng hồ sơ'], ['l2', 'L2 Tín hiệu', 'các con số từ ngày sinh và họ tên'],
+  ['l3', 'L3 Ánh xạ', 'tín hiệu → archetype → hồ sơ → ngành'], ['l4', 'L4 Công thức', 'công thức với số thật'],
+  ['l5', 'L5 Tính chi tiết', '35 hồ sơ, độ ổn định, so sánh persona'], ['l6', 'L6 Tri thức nguồn', 'ý nghĩa con số, quy tắc, trích dẫn'],
+  ['l7', 'L7 Dữ liệu & lineage', 'lần tính, điểm chuẩn, nguồn dữ liệu'],
 ];
 const personaOf = (role) => ({ student: 'HS', parent: 'PH', counselor: 'TVV' }[role] ?? 'TVV');
 const targetFields = (kb, text) => {
@@ -76,6 +78,7 @@ export default function StudentView({ source, user, layer, sel: selParam, go }) 
   if (err) return <div className="panel empty"><p>{err.status === 403 ? t('Bạn không có quyền xem hồ sơ này.') : err.status === 404 ? t('Không tìm thấy học sinh.') : `${tr('Lỗi', 'Error')}: ${err.message}`}</p><p><a href="#/">{t('← về trang chính')}</a></p></div>;
   if (!out) return <p className="empty">{t('Đang tính…')}</p>;
 
+  const base0 = `/${isGuest ? 'guest' : `s/${sid}`}`;
   const sel = selParam && out.result.rows.some((r) => r.profile === selParam) ? selParam : (out.result.top[0]?.profile ?? out.result.rows[0].profile);
   const goLayer = (l, p) => {
     if (l === 'whatif') { go(`/${isGuest ? 'guest' : `s/${sid}`}/l0`); setTimeout(() => document.getElementById('whatif')?.scrollIntoView({ behavior: 'smooth' }), 50); return; }
@@ -105,14 +108,24 @@ export default function StudentView({ source, user, layer, sel: selParam, go }) 
       <nav className="crumbs" aria-label={t('Đường dẫn')}>
         {!isGuest && user?.role !== 'student' && <><a href="#/students">{t('Danh sách học sinh')}</a><span>›</span></>}
         {isGuest && <><a href="#/guest">{t('Tự nhập')}</a><span>›</span></>}
-        <b>{stu.id}</b><span>{stu.name}</span>
-        <span className="muted">· {tr('sinh', 'born')} {stu.birthYear}{stu.grade ? ` · ${tr('lớp', 'grade')} ${stu.grade}` : ''} · {tr('môi trường mong muốn', 'preferred environment')}: {envName(kbL, stu.preferredEnv)}</span>
-        {user && !isGuest && <span className="muted">· {tr('bạn xem với vai trò', 'viewing as')} {ROLE_NAME[user.role]}</span>}
+        {layer !== 'l0' ? <a href={`#${base0}/l0`}><b>{stu.id}</b></a> : <b>{stu.id}</b>}<span>{stu.name}</span>
+        <span className="muted">· {stu.birthYear}{stu.grade ? ` · ${tr('lớp', 'grade')} ${stu.grade}` : ''} · {envName(kbL, stu.preferredEnv)}</span>
       </nav>
-      <nav className="layers" aria-label={t('Tầng giải thích')}>
-        {LAYERS.map(([k, name]) => <a key={k} href={`#/${isGuest ? 'guest' : `s/${sid}`}/${k}${k !== 'l0' ? `?p=${sel}` : ''}`} aria-current={layer === k ? 'page' : undefined}>{t(name)}</a>)}
-      </nav>
+      {layer !== 'l0' && (
+        <nav className="layers" aria-label={t('Tầng giải thích')}>
+          <a href={`#${base0}/l0`} className="back">{t('← Kết quả')}</a>
+          {LAYERS.slice(1).map(([k, name]) => <a key={k} href={`#${base0}/${k}?p=${sel}`} aria-current={layer === k ? 'page' : undefined}>{t(name)}</a>)}
+        </nav>
+      )}
       {layer === 'l0' && <Dashboard out={out} base={base} kb={kbL} person={p2} onGo={goLayer} whatif={whatif} />}
+      {layer === 'l0' && (
+        <details className="panel more">
+          <summary>{t('Xem chi tiết tính toán (L1–L7)')}</summary>
+          <ul className="more-list">
+            {LAYERS.slice(1).map(([k, name, desc]) => <li key={k}><a href={`#${base0}/${k}?p=${sel}`}>{t(name)}</a> <span className="small muted">{t(desc)}</span></li>)}
+          </ul>
+        </details>
+      )}
       {layer === 'l1' && <L1 {...props} />}
       {layer === 'l2' && <L2 {...props} />}
       {layer === 'l3' && <L3 {...props} />}

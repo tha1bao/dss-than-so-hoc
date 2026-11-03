@@ -3,7 +3,8 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
-  server: { proxy: { '/api': 'http://localhost:3001' } },
+  // API_TARGET=https://dss-than-so-hoc.vercel.app → xem giao diện (chế độ khách) khi máy không tới được TiDB
+  server: { proxy: { '/api': { target: process.env.API_TARGET ?? 'http://localhost:3001', changeOrigin: true } } },
   test: {
     include: ['scripts/**/*.test.js', 'tests/**/*.test.js'],
     testTimeout: 60000,

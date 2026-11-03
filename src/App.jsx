@@ -75,26 +75,23 @@ export default function App() {
     <TipProvider>
       <div className="shell">
         <header className="topbar">
-          <div className="brand">
-            <h1><a href="#/" style={{ textDecoration: 'none' }}>{t('DSS gợi ý nhóm ngành theo thần số học')}</a></h1>
-            <small>{t('DSS301 · Nhóm 2 · ASS3 – Pythagoras · Kabala · Vệ Đà + kỹ năng tự đánh giá + môi trường mong muốn')}</small>
-          </div>
+          <h1 className="brand"><a href="#/">{t('DSS chọn ngành')}</a></h1>
           <span className="sim-badge">{t('Dữ liệu mô phỏng')}</span>
-          {user && user.role === 'admin' && <a className="btn" href="#/admin">{t('Quản trị')}</a>}
-          {user && user.role !== 'student' && <a className="btn" href="#/students">{t('Danh sách')}</a>}
-          {user && ['admin', 'counselor'].includes(user.role) && <a className="btn" href="#/test/report">{t('Test khả dụng')}</a>}
-          <button type="button" className="btn" onClick={toggleLang} lang={lang === 'en' ? 'vi' : 'en'} aria-label="Ngôn ngữ / Language">{lang === 'en' ? 'Tiếng Việt' : 'English'}</button>
-          <button type="button" className="btn" onClick={cycleTheme} title={t('Đổi giao diện')}>{t({ auto: 'Giao diện: theo máy', light: 'Giao diện: sáng', dark: 'Giao diện: tối' }[theme])}</button>
+          <nav className="topnav">
+            {user && user.role !== 'student' && <a className="btn" href="#/students">{t('Danh sách')}</a>}
+            {user && ['admin', 'counselor'].includes(user.role) && <a className="btn" href="#/test/report">{t('Test khả dụng')}</a>}
+            {user && user.role === 'admin' && <a className="btn" href="#/admin">{t('Quản trị')}</a>}
+          </nav>
+          <button type="button" className="btn icon" onClick={toggleLang} lang={lang === 'en' ? 'vi' : 'en'} aria-label="Ngôn ngữ / Language">{lang === 'en' ? 'VI' : 'EN'}</button>
+          <button type="button" className="btn icon" onClick={cycleTheme} aria-label={t({ auto: 'Giao diện: theo máy', light: 'Giao diện: sáng', dark: 'Giao diện: tối' }[theme])} title={t({ auto: 'Giao diện: theo máy', light: 'Giao diện: sáng', dark: 'Giao diện: tối' }[theme])}>{{ auto: '◐', light: '☀', dark: '☾' }[theme]}</button>
           {user ? (
             <span className="who"><span className="role-chip">{ROLE_NAME[user.role]}</span>{user.displayName}<button type="button" className="btn" onClick={logout}>{t('Đăng xuất')}</button></span>
           ) : p0 === 'guest' ? <a className="btn" href="#/login">{t('Đăng nhập')}</a> : null}
         </header>
         <main key={lang}>{page}</main>
         <footer className="foot">
-          <p><b>{t('Dữ liệu mô phỏng')}</b> {t('– học sinh, phụ huynh, tư vấn viên trên trang này là người giả lập, không phải người thật.')}</p>
-          <p>{t('Thần số học không có giá trị dự báo khoa học (E10). Kết quả chỉ là gợi ý để trao đổi cùng gia đình và tư vấn viên – không thay thế tư vấn hướng nghiệp, năng lực học tập và điểm thi.')}</p>
-          <p className="muted">Engine {ENGINE_VERSION} · {tr('khớp engine.py và DSS_ASS2_ThanSoHoc_v6.xlsx (test hồi quy) · mặc định bộ trọng số A (ROC) + chuẩn hóa min–max.', 'matches engine.py and DSS_ASS2_ThanSoHoc_v6.xlsx (regression tests) · default weight set A (ROC) + min–max normalization.')}</p>
-          {lang === 'en' && <p className="muted">{t('Nội dung tri thức (ý nghĩa con số, tên ngành, trích dẫn) giữ nguyên ngôn ngữ nguồn; câu giải thích và cảnh báo đã có bản tiếng Anh.')}</p>}
+          <p><b>{t('Dữ liệu mô phỏng')}</b> · {t('Thần số học không có giá trị dự báo khoa học (E10) – kết quả chỉ để trao đổi cùng gia đình và tư vấn viên.')}
+            <span className="muted"> · Engine {ENGINE_VERSION} · DSS301 {tr('Nhóm', 'Group')} 2{lang === 'en' ? ` · ${t('Tri thức nguồn giữ ngôn ngữ gốc.')}` : ''}</span></p>
         </footer>
       </div>
     </TipProvider>

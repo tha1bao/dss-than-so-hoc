@@ -5,6 +5,7 @@ import { explainProfile } from '../../shared/engine/view.js';
 import { getLayer } from '../api.js';
 import { fmt, envName, groupName, skillName, profileMajors, GROUP_SCHOOL, PERSONA_NAME } from '../format.js';
 import { LabelChip, ContribBar, ContribLegend, Axis01, Warnings } from './common.jsx';
+import { LabelDistribution } from './Dashboard.jsx';
 import { t, tr, num, localizeKb } from '../i18n.js';
 
 const WEEKDAY_VI = ['', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy', 'Chủ nhật'];
@@ -133,7 +134,7 @@ export function L2({ out, kb, sel, setSel }) {
         <div className="grid2">
           <section className="panel">
             <h2 style={{ marginBottom: 6 }}>{t('Tên đã chuẩn hóa → giá trị từng chữ')}</h2>
-            <p className="small muted" style={{ marginBottom: 8 }}>{t('Bỏ dấu, Đ → D, viết hoa, bỏ ký tự ngoài A–Z (GEN). Ô nền đậm = nguyên âm (A E I O U); viền xanh = thuộc chữ ghép TH/PH/TZ. Số trên: Pythagoras · số dưới: Hebraic.')}</p>
+            <p className="small muted" style={{ marginBottom: 8 }}>{t('Bỏ dấu, Đ → D, viết hoa, bỏ ký tự ngoài A–Z (GEN). Nền đậm = nguyên âm, viền xanh = chữ ghép TH/PH/TZ; số trên Pythagoras, số dưới Hebraic.')}</p>
             {sig.name.words.map((w, wi) => {
               const marks = new Set();
               for (const pair of Object.keys(kb.digraphs)) { let i = w.indexOf(pair); while (i >= 0) { marks.add(i); marks.add(i + 1); i = w.indexOf(pair, i + 1); } }
@@ -347,12 +348,16 @@ export function L5({ out, kb, sel, setSel, compare }) {
       )}
       <div className="grid2">
         <section className="panel">
+          <h2 style={{ marginBottom: 6 }}>{t('Phân bố nhãn – 35 hồ sơ')}</h2>
+          <LabelDistribution rows={result.rows} />
+        </section>
+        <section className="panel">
           <h2 style={{ marginBottom: 6 }}>{t('Độ ổn định Top-1')} – {stability.count}/{stability.of} {tr('cấu hình', 'configurations')}</h2>
           <table className="tbl"><thead><tr><th>{t('Cấu hình')}</th><th>Top-1</th><th>Top-3</th><th className="r">{t('Trùng Top-3 gốc')}</th></tr></thead>
             <tbody>{stability.runs.map((r) => (
               <tr key={r.code} className={r.top1 !== stability.runs[0].top1 ? 'hl' : ''}><td>{r.name}</td><td>{r.top1 ?? '—'}</td><td>{r.top3.join(', ')}</td><td className="r">{r.top3Overlap}/3</td></tr>
             ))}</tbody></table>
-          <p className="small muted" style={{ marginTop: 6 }}>{tr(`Cùng bộ trọng số ${out.options.wset ?? 'A'}, ${result.normalize ? 'có' : 'không'} chuẩn hóa. Dòng tô vàng = Top-1 đổi. Nguồn cấu hình: sheet Sensitivity (v6).`, `Same weight set ${out.options.wset ?? 'A'}, ${result.normalize ? 'with' : 'without'} normalization. Highlighted row = Top-1 changes. Configurations from the Sensitivity sheet (v6).`)}</p>
+          <p className="small muted" style={{ marginTop: 6 }}>{tr(`Cùng bộ trọng số ${out.options.wset ?? 'A'}, ${result.normalize ? 'có' : 'không'} chuẩn hóa (sheet Sensitivity v6). Dòng tô vàng = Top-1 đổi.`, `Same weight set ${out.options.wset ?? 'A'}, ${result.normalize ? 'with' : 'without'} normalization (Sensitivity sheet v6). Highlighted row = Top-1 changes.`)}</p>
         </section>
         <section className="panel">
           <h2 style={{ marginBottom: 6 }}>{tr('Quét α (β, γ giữ tỉ lệ persona', 'α sweep (β, γ keep the ratio of persona')} {PERSONA_NAME[result.persona]})</h2>
