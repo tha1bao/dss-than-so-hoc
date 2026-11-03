@@ -17,13 +17,15 @@ function WhyBtn({ onClick }) {
 }
 
 /** Ngăn kéo giải thích nhanh (Drawer) – không bị văng trang khi bấm "Vì sao?" */
-function WhyDrawer({ out, kb, profile, onClose, onGoFull }) {
-  const { result } = out;
+function WhyDrawer({ out, kb, profile, base0, onClose, onSwitchProfile }) {
+  const { result, target } = out;
   const row = result.rows.find((r) => r.profile === profile) ?? result.top[0];
   if (!row) return null;
   const m = repMajor(kb, row.profile, result.env);
   const nOn = result.groups.length;
   const step = nextStepPlain(row, result, kb);
+  const targetMajor = target?.major;
+  const targetProfile = targetMajor ? (targetMajor.profile_id ?? targetMajor.profile) : null;
 
   return (
     <div className="drawer-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-label="Giải thích vì sao">
@@ -35,6 +37,15 @@ function WhyDrawer({ out, kb, profile, onClose, onGoFull }) {
           </div>
           <button type="button" className="drawer-close-btn" onClick={onClose} aria-label="Đóng">✕</button>
         </div>
+
+        {targetMajor && targetProfile !== row.profile && (
+          <div className="drawer-target-banner">
+            <span className="small">{tr('Ngành bạn đang nhắm:', 'Your target major:')} <b>{targetMajor.name_vi}</b></span>
+            <button type="button" className="btn small" onClick={() => onSwitchProfile(targetProfile)}>
+              🎯 {tr('Xem giải thích ngành này', 'View this major')}
+            </button>
+          </div>
+        )}
 
         <div className="drawer-body">
           <div className="drawer-pct-box">
@@ -80,8 +91,17 @@ function WhyDrawer({ out, kb, profile, onClose, onGoFull }) {
           )}
 
           <div className="drawer-foot">
-            <button type="button" className="btn small primary" onClick={onClose}>{tr('Tiếp tục thử What-if', 'Continue What-if')}</button>
-            <button type="button" className="btn small ghost" onClick={onGoFull}>{tr('Mở trang chi tiết đầy đủ (L1–L7) →', 'Full detailed view (L1–L7) →')}</button>
+            <a
+              href={`#${base0}/l1?p=${row.profile}`}
+              className="btn small primary"
+              style={{ textAlign: 'center', textDecoration: 'none' }}
+              onClick={onClose}
+            >
+              {tr('Mở toàn màn hình xem chi tiết (Tab L1–L7) ↗', 'Open full detailed view (Tab L1–L7) ↗')}
+            </a>
+            <button type="button" className="btn small ghost" onClick={onClose}>
+              {tr('✕ Đóng để tiếp tục thử What-if', '✕ Close to continue What-if')}
+            </button>
           </div>
         </div>
       </div>
@@ -89,7 +109,7 @@ function WhyDrawer({ out, kb, profile, onClose, onGoFull }) {
   );
 }
 
-function TopCard({ out, base, kb, onOpenWhy }) {
+function TopCard({ out, base, kb, base0, onOpenWhy }) {
   const { result } = out;
   const top = result.top[0];
   if (!top) return <section className="panel answer"><p className="empty">{tr('Chưa tìm được ngành phù hợp: không con số nào của bạn trùng với nhóm ngành nào.', 'No match yet: none of your numbers match any major group.')}</p></section>;
@@ -121,7 +141,10 @@ function TopCard({ out, base, kb, onOpenWhy }) {
       <div className="answer-pct" title={PCT_TIP()}>
         <span className="big-pct num">{pct(top.C)}</span>
         <span className="pct-note">{PCT_NOTE()}</span>
-        <WhyBtn onClick={() => onOpenWhy(top.profile)} />
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, marginTop: 4 }}>
+          <WhyBtn onClick={() => onOpenWhy(top.profile)} />
+          <a href={`#${base0}/l1?p=${top.profile}`} className="small muted" style={{ fontSize: '0.74rem' }}>{tr('Xem chi tiết L1–L7 ↗', 'Full details ↗')}</a>
+        </div>
       </div>
     </section>
   );
@@ -148,7 +171,7 @@ function MajorRow({ row, baseRow, kb, env, onOpenWhy, note }) {
   );
 }
 
-export function OtherMajors({ out, base, kb, onOpenWhy, onGo, onSetTarget }) {
+export function OtherMajors({ out, base, kb, base0, onOpenWhy, onGo, onSetTarget }) {
   const { result, target } = out;
   const env = result.env;
   const ranked = result.rows.filter((r) => r.rank).sort((a, b) => a.rank - b.rank);
@@ -161,7 +184,7 @@ export function OtherMajors({ out, base, kb, onOpenWhy, onGo, onSetTarget }) {
     <>
       <div className="panel-head">
         <h2>{tr('Ngành phù hợp khác', 'Other good fits')}</h2>
-        <a href="#" className="small" onClick={link(() => onGo('l5'))}>{tr('Xem bảng xếp hạng đầy đủ →', 'See full ranking →')}</a>
+        <a href={`#${base0}/l5`} className="small">{tr('Xem bảng xếp hạng đầy đủ (L5) →', 'See full ranking (L5) →')}</a>
       </div>
       {rest.length ? (
         <ol className="mlist">
@@ -174,13 +197,13 @@ export function OtherMajors({ out, base, kb, onOpenWhy, onGo, onSetTarget }) {
         <p className="small muted">{tr('Không có ngành nào khác được xếp hạng.', 'No other majors are ranked.')}</p>
       )}
 
-      {/* Khối ngành mục tiêu */}
+      {/* Khối ngành mục tiêu (Chuyên ngành mong muốn) */}
       <div className="target-box">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
           <h3>{tr('Ngành bạn đang nhắm', 'Your target major')}: {target?.major?.name_vi ?? target?.text ?? tr('Chưa đặt mục tiêu', 'None set')}</h3>
           {!target?.text && (
-            <button type="button" className="btn small ghost" onClick={() => onSetTarget(top1MajorName)}>
-              {tr(`🎯 Đặt Top 1 "${top1MajorName}" làm mục tiêu`, `🎯 Set Top 1 "${top1MajorName}" as target`)}
+            <button type="button" className="btn small primary" onClick={() => onSetTarget(top1MajorName)}>
+              {tr(`🎯 Đặt Top 1 "${top1MajorName}" làm chuyên ngành mong muốn`, `🎯 Set Top 1 "${top1MajorName}" as target`)}
             </button>
           )}
         </div>
@@ -190,9 +213,23 @@ export function OtherMajors({ out, base, kb, onOpenWhy, onGo, onSetTarget }) {
         )}
 
         {tg && (
-          <ol className="mlist" style={{ marginTop: 4 }}>
-            <MajorRow row={tg} baseRow={base?.target?.analysis?.row} kb={kb} env={env} onOpenWhy={onOpenWhy} note={tg.rank ? `${tr('hạng', 'rank')} ${tg.rank}` : tr('không xếp hạng', 'not ranked')} />
-          </ol>
+          <div style={{ marginTop: 6 }}>
+            <ol className="mlist">
+              <MajorRow row={tg} baseRow={base?.target?.analysis?.row} kb={kb} env={env} onOpenWhy={onOpenWhy} note={tg.rank ? `${tr('hạng', 'rank')} ${tg.rank}` : tr('không xếp hạng', 'not ranked')} />
+            </ol>
+            <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+              <a
+                href={`#${base0}/l1?p=${target.major.profile_id ?? target.major.profile}`}
+                className="btn small primary"
+                style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+              >
+                🎯 {tr(`Xem chi tiết chuyên ngành mong muốn (${target.major.name_vi}) →`, `View details for target major (${target.major.name_vi}) →`)}
+              </a>
+              <button type="button" className="btn small" onClick={() => onOpenWhy(tg.profile)}>
+                {tr('Giải thích nhanh vì sao', 'Quick explanation why')}
+              </button>
+            </div>
+          </div>
         )}
 
         {target?.major && target?.benchmark && (
@@ -276,7 +313,7 @@ function Indicators({ out, kb, onGo, onSetTarget }) {
   );
 }
 
-export default function Dashboard({ out, base, kb, onGo, whatif }) {
+export default function Dashboard({ out, base, kb, onGo, whatif, base0 = '' }) {
   const [drawerProfile, setDrawerProfile] = useState(null);
   const r = out.result;
   const env = r.env;
@@ -293,9 +330,9 @@ export default function Dashboard({ out, base, kb, onGo, whatif }) {
             <b>{base.result.top[0] ? repMajor(kb, base.result.top[0].profile, base.result.env).name : '–'}</b> → <b>{r.top[0] ? repMajor(kb, r.top[0].profile, env).name : '–'}</b>.
           </p>
         )}
-        <TopCard out={out} base={base} kb={kb} onOpenWhy={openWhy} />
+        <TopCard out={out} base={base} kb={kb} base0={base0} onOpenWhy={openWhy} />
         <section className="panel" aria-label={tr('Ngành phù hợp khác', 'Other good fits')}>
-          <OtherMajors out={out} base={base} kb={kb} onOpenWhy={openWhy} onGo={onGo} onSetTarget={whatif.setTarget} />
+          <OtherMajors out={out} base={base} kb={kb} base0={base0} onOpenWhy={openWhy} onGo={onGo} onSetTarget={whatif.setTarget} />
         </section>
         <section className="zone-kpi" aria-label={t('Chỉ số chính & cảnh báo')}>
           <Indicators out={out} kb={kb} onGo={onGo} onSetTarget={whatif.setTarget} />
@@ -312,8 +349,9 @@ export default function Dashboard({ out, base, kb, onGo, whatif }) {
           out={out}
           kb={kb}
           profile={drawerProfile}
+          base0={base0}
           onClose={() => setDrawerProfile(null)}
-          onGoFull={() => { setDrawerProfile(null); onGo('l1', drawerProfile); }}
+          onSwitchProfile={(p) => setDrawerProfile(p)}
         />
       )}
     </div>

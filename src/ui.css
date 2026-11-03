@@ -675,3 +675,33 @@ table.tbl { border-collapse: collapse; width: 100%; font-size: 0.82rem; }
   padding: 5px 8px;
   border-radius: var(--radius-s);
 }
+
+/* Banner chuyển đổi ngành mục tiêu trong Drawer */
+.drawer-target-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface-2);
+  border: 1.5px dashed var(--c-nf);
+  border-radius: var(--radius-s);
+  padding: 8px 12px;
+}
+
+/* Thẻ ngành mong muốn trên thanh tầng navigation */
+.target-nav-pill {
+  margin-left: auto;
+  background: var(--c-nf) !important;
+  color: #fff !important;
+  border-color: var(--c-nf) !important;
+  font-weight: 700 !important;
+  padding: 5px 12px !important;
+  border-radius: 999px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  text-decoration: none !important;
+}
+.target-nav-pill:hover {
+  filter: brightness(1.1);
+}

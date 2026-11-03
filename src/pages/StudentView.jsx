@@ -100,6 +100,7 @@ export default function StudentView({ source, user, layer, sel: selParam, go }) 
     onReset: () => { setOpt({ persona: basePersona }); setTarget(person.targetDefault); setSaveState(null); },
   };
   const props = { out, kb: kbL, person: p2, sel, setSel };
+  const targetMajor = out.target?.major;
 
   return (
     <>
@@ -109,13 +110,30 @@ export default function StudentView({ source, user, layer, sel: selParam, go }) 
         {layer !== 'l0' ? <a href={`#${base0}/l0`}><b>{stu.id}</b></a> : <b>{stu.id}</b>}<span>{stu.name}</span>
         <span className="muted">· {stu.birthYear}{stu.grade ? ` · ${tr('lớp', 'grade')} ${stu.grade}` : ''} · {envName(kbL, stu.preferredEnv)}</span>
       </nav>
-      {layer !== 'l0' && (
-        <nav className="layers" aria-label={t('Tầng giải thích')}>
-          <a href={`#${base0}/l0`} className="back">{t('← Kết quả')}</a>
-          {LAYERS.slice(1).map(([k, vi, en]) => <a key={k} href={`#${base0}/${k}?p=${sel}`} aria-current={layer === k ? 'page' : undefined}><small>{k.toUpperCase()}</small> {tr(vi, en)}</a>)}
-        </nav>
-      )}
-      {layer === 'l0' && <Dashboard out={out} base={base} kb={kbL} onGo={goLayer} whatif={whatif} />}
+
+      {/* Thanh tầng luôn hiển thị để học sinh chuyển đổi bất kỳ lúc nào */}
+      <nav className="layers" aria-label={t('Tầng giải thích')}>
+        <a href={`#${base0}/l0`} aria-current={layer === 'l0' ? 'page' : undefined}>
+          <small>L0</small> {t('Kết quả')}
+        </a>
+        {LAYERS.slice(1).map(([k, vi, en]) => (
+          <a key={k} href={`#${base0}/${k}?p=${sel}`} aria-current={layer === k ? 'page' : undefined}>
+            <small>{k.toUpperCase()}</small> {tr(vi, en)}
+          </a>
+        ))}
+        {targetMajor && (
+          <a
+            href={`#${base0}/l1?p=${targetMajor.profile_id ?? targetMajor.profile}`}
+            className="target-nav-pill"
+            aria-current={layer !== 'l0' && sel === (targetMajor.profile_id ?? targetMajor.profile) ? 'page' : undefined}
+            title={tr(`Xem chi tiết cho ngành mong muốn: ${targetMajor.name_vi}`, `Details for target major: ${targetMajor.name_vi}`)}
+          >
+            🎯 {tr('Ngành mong muốn', 'Target major')}: <b>{targetMajor.name_vi}</b>
+          </a>
+        )}
+      </nav>
+
+      {layer === 'l0' && <Dashboard out={out} base={base} kb={kbL} onGo={goLayer} whatif={whatif} base0={base0} />}
       {layer === 'l1' && <L1 {...props} />}
       {layer === 'l2' && <L2 {...props} />}
       {layer === 'l3' && <L3 {...props} />}

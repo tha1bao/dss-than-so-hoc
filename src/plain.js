@@ -50,10 +50,12 @@ export function insightLine(row, result, kb) {
 }
 
 /** Câu giải thích nhãn bằng lời. */
-export function labelPlain(row, kb) {
+export function labelPlain(row, rOrKb, kbMaybe) {
+  const kb = kbMaybe ?? rOrKb;
+  if (!row || !kb?.params) return '';
   const need = fmt(SKILL_NEED(kb), 1);
   if (row.label === LABELS.NONE) return tr('Không con số nào của bạn trùng với nhóm ngành này, nên hệ thống không đề xuất.', 'None of your numbers match this group, so it is not recommended.');
-  if (row.label === LABELS.CHALLENGE) return tr(`Có kỹ năng liên quan bạn tự chấm từ 2/5 trở xuống (${skillsText(kb, row.weakList)}).`, `You rated a related skill 2/5 or lower (${skillsText(kb, row.weakList)}).`);
+  if (row.label === LABELS.CHALLENGE) return tr(`Có kỹ năng liên quan bạn tự chấm từ 2/5 trở xuống (${skillsText(kb, row.weakList ?? [])}).`, `You rated a related skill 2/5 or lower (${skillsText(kb, row.weakList ?? [])}).`);
   if (row.label === LABELS.PRIORITY) return tr(`Có từ 2 con số trùng và kỹ năng trung bình từ ${need}/5.`, `At least 2 numbers match and average skill is ${need}/5 or more.`);
   const miss = [row.EC < kb.params.EC_min ? tr(`mới có ${row.EC} con số trùng`, `only ${row.EC} number matches`) : null,
     row.SR < kb.params.SR_min - 1e-9 ? tr(`kỹ năng mới đạt ${fmt(avgSkill(row.SR), 1)}/5`, `skills average ${fmt(avgSkill(row.SR), 1)}/5`) : null].filter(Boolean).join(tr(', ', ', '));

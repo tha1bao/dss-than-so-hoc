@@ -114,7 +114,7 @@ export function L1({ out, kb, sel, setSel }) {
       <div className="l1-pct">{tr('Mức phù hợp', 'Overall fit')}: <b>{row.EC >= 1 ? pct(row.C) : '—'}</b> {row.rank ? `(${tr('hạng', 'rank')} ${row.rank}/${r.ranked.length})` : `(${tr('không xếp hạng', 'not ranked')})`}</div>
       <div className="parts">
         {COMP.map(([k, cls, name]) => {
-          const w = row.contrib[k] ?? 0;
+          const w = row.contrib?.[k] ?? 0;
           return (
             <div key={k} className="part">
               <span className="part-name">{t(name)}</span>
@@ -126,7 +126,7 @@ export function L1({ out, kb, sel, setSel }) {
         })}
       </div>
       <div className="l1-label">
-        <p><b>{t('Đánh giá')}:</b> {labelPlain(row, r, kb)}</p>
+        <p><b>{t('Đánh giá')}:</b> {labelPlain(row, kb)}</p>
         {step && <p><b>{tr('Bước tiếp theo để lên "Ưu tiên"', 'Next step to reach "Priority"')}:</b> {step}.</p>}
         {ties.length > 0 && <p className="small muted">{tr(`Hòa điểm với ${ties.length} nhóm ngành khác:`, `Tied with ${ties.length} other group(s):`)} {ties.map((x) => repMajor(kb, x.profile, r.env).name).join(', ')}. {tr('Nhóm có mã đứng trước được xếp trên.', 'The group with the earlier code is ranked higher.')}</p>}
       </div>
@@ -728,7 +728,7 @@ export function L7({ out, kb, meta }) {
         <section className="panel">
           <h2 style={{ marginBottom: 6 }}>{tr('Dữ liệu dùng để tính', 'Data used')}</h2>
           <div className="plain-list">
-            <p>{meta.simulated ? tr('Học sinh mô phỏng – không phải người thật.', 'Simulated student – not a real person.') : tr('Thông tin bạn tự nhập – không được lưu lại.', 'Information you entered – not saved.')}</p>
+            <p>{meta?.simulated ? tr('Học sinh mô phỏng – không phải người thật.', 'Simulated student – not a real person.') : tr('Thông tin bạn tự nhập – không được lưu lại.', 'Information you entered – not saved.')}</p>
             <p>{tr('Tri thức lấy từ bảng tính DSS v6 của nhóm; kết quả web đã kiểm tra khớp 100% với bảng tính.', "Knowledge comes from the group's DSS v6 workbook; web results were checked to match it 100%.")}</p>
             <p>{tr('Trọng số: ROC (mặc định), đưa về cùng thang trước khi cộng.', 'Weights: ROC (default), scaled before adding.')}</p>
           </div>
@@ -737,7 +737,7 @@ export function L7({ out, kb, meta }) {
       <Teacher title={tr('lần tính, điểm chuẩn, dòng dõi dữ liệu, tài liệu', 'run, cut-offs, lineage, documents')}>
         <div className="grid2">
           <table className="tbl"><tbody>
-            <tr><td>{t('Mã lần tính')}</td><td className="num">{meta.runId ?? tr('không lưu (khách / chỉ xem)', 'not saved (guest / read-only)')}</td></tr>
+            <tr><td>{t('Mã lần tính')}</td><td className="num">{meta?.runId ?? tr('không lưu (khách / chỉ xem)', 'not saved (guest / read-only)')}</td></tr>
             <tr><td>Engine</td><td>{out.engine}</td></tr>
             <tr><td>{t('Bộ tham số')}</td><td>{kb.paramSet.code} v{kb.paramSet.version} · {kb.paramSet.method}</td></tr>
             <tr><td>{t('Phiên bản tri thức')}</td><td>{kb.kbRelease?.label} · <span className="num small">{kb.kbRelease?.content_hash?.slice(0, 16)}…</span></td></tr>
