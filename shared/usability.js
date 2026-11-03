@@ -38,18 +38,18 @@ export function susGrade(score) {
  */
 export const TASKS = {
   student: { account: 'sim-hs001', list: [
-    { no: 1, tc: 'TC01', q: 'Q1', text: 'Bạn là học sinh SIM-HS001. Hãy cho biết nhóm ngành được gợi ý đứng đầu và mức khuyến nghị của nó.', answer: 'P06 – nhãn Cân nhắc (hòa điểm với P15, C = 0,917; hòa thì hồ sơ đứng trước xếp trên)' },
-    { no: 2, tc: 'TC02', q: 'Q1', text: 'Vì sao nhóm ngành đó đứng đầu? Phần nào đóng góp nhiều nhất vào điểm của nó?', answer: 'γ·ENV* (môi trường) đóng góp lớn nhất; xem "Vì sao?" (L1)' },
-    { no: 3, tc: 'TC05', q: 'Q2', text: 'Bạn muốn học ngành mục tiêu "Công nghệ sinh học". Hệ thống nói gì về ngành này, và nếu tăng kỹ năng yếu nhất thêm 1 bậc thì có thay đổi không?', answer: 'Ngành 204 thuộc P17: EC = 0 → Không đề xuất (cảnh báo đỏ); tăng SK07 (kỹ năng yếu duy nhất) vẫn không đổi vì không có tín hiệu thần số học' },
+    { no: 1, tc: 'TC01', q: 'Q1', text: 'Bạn là học sinh SIM-HS001. Hãy cho biết nhóm ngành được gợi ý đứng đầu và mức khuyến nghị của nó.', answer: 'Xử lý ngôn ngữ tự nhiên – 92%, nhãn Cân nhắc (ngang điểm với Quản trị khách sạn 92%; hòa thì nhóm đứng trước xếp trên) [nhóm P06]' },
+    { no: 2, tc: 'TC02', q: 'Q1', text: 'Vì sao nhóm ngành đó đứng đầu? Phần nào đóng góp nhiều nhất vào điểm của nó?', answer: 'Phần "Môi trường" đóng góp lớn nhất; bấm "Vì sao?" dưới % (L1)' },
+    { no: 3, tc: 'TC05', q: 'Q2', text: 'Bạn muốn học ngành mục tiêu "Công nghệ sinh học". Hệ thống nói gì về ngành này, và nếu tăng kỹ năng yếu nhất thêm 1 bậc thì có thay đổi không?', answer: 'Công nghệ sinh học: Không đề xuất (không con số nào trùng, cảnh báo đỏ); tăng kỹ năng "Phân tích sâu, quan sát, nghiên cứu, tự học" vẫn không đổi [ngành 204, nhóm P17, EC = 0]' },
   ] },
   parent: { account: 'sim-ph001', list: [
-    { no: 1, tc: 'TC06', q: 'Q1', text: 'Bạn là phụ huynh của SIM-HS002. Nhóm ngành đứng đầu cho con bạn là gì và có nên chọn ngay không?', answer: 'P03 – nhãn Thử thách (1 kỹ năng yếu: SK07 bậc 2), hòa điểm với P10 (Cân nhắc) → chưa nên chọn ngay; không hồ sơ nào đạt Ưu tiên' },
+    { no: 1, tc: 'TC06', q: 'Q1', text: 'Bạn là phụ huynh của SIM-HS002. Nhóm ngành đứng đầu cho con bạn là gì và có nên chọn ngay không?', answer: 'Kinh tế nông nghiệp – nhãn Thử thách (kỹ năng "Phân tích sâu, quan sát, nghiên cứu, tự học" mới 2/5), ngang điểm với Truyền thông đa phương tiện (Cân nhắc) → chưa nên chọn ngay [nhóm P03, P10]' },
     { no: 2, tc: 'TC07', q: null, text: 'Thử mở hồ sơ của một học sinh khác (ví dụ SIM-HS003). Điều gì xảy ra?', answer: 'Bị chặn – chỉ xem được con mình' },
-    { no: 3, tc: 'TC05', q: 'Q2', text: 'Con bạn cần tăng kỹ năng nào để nhóm ngành đứng đầu thành "Ưu tiên"? Thử bằng What-if.', answer: 'Tăng SK07 từ bậc 2 lên 3 (What-if +1) → P03 thành Ưu tiên (SR 0,625 → 0,708)' },
+    { no: 3, tc: 'TC05', q: 'Q2', text: 'Con bạn cần tăng kỹ năng nào để nhóm ngành đứng đầu thành "Ưu tiên"? Thử bằng What-if.', answer: 'Tăng "Phân tích sâu, quan sát, nghiên cứu, tự học" từ 2 lên 3 (What-if +1) → Kinh tế nông nghiệp thành Ưu tiên [P03, SR 0,625 → 0,708]' },
   ] },
   counselor: { account: 'sim-tvv01', list: [
     { no: 1, tc: 'TC08', q: 'Q1', text: 'Trong danh sách học sinh bạn phụ trách, có bao nhiêu em có Top-1 là "Thử thách"? Kể tên một em.', answer: 'Lọc nhãn Thử thách → 1 em: SIM-HS051 (trong 8 em phụ trách)' },
-    { no: 2, tc: 'TC09', q: 'Q1', text: 'Với SIM-HS001, Top-1 có giống nhau theo góc nhìn Học sinh, Phụ huynh và Tư vấn viên không?', answer: 'Có – Top-1 đều là P06 (bảng "So sánh 3 persona" ở L5); độ ổn định Top-1 5/5' },
+    { no: 2, tc: 'TC09', q: 'Q1', text: 'Với SIM-HS001, Top-1 có giống nhau theo góc nhìn Học sinh, Phụ huynh và Tư vấn viên không?', answer: 'Có – cả 3 góc nhìn đều ra Xử lý ngôn ngữ tự nhiên (L5 "Kết quả có chắc không?"); độ ổn định 5/5 = rất chắc chắn' },
     { no: 3, tc: 'TC10', q: null, text: 'Ý nghĩa của số chủ đạo của SIM-HS001 lấy từ sách nào, trang nào?', answer: 'Số chủ đạo 2 → L6: Phillips ch.7 (PDF p.68–69) + Lê Đỗ Quỳnh Hương, Con số chủ đạo 2 (PDF p.25–27)' },
   ] },
 };

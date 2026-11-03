@@ -90,7 +90,7 @@ export default function App() {
         </header>
         <main key={lang}>{page}</main>
         <footer className="foot">
-          <p><b>{t('Dữ liệu mô phỏng')}</b> · {t('Thần số học không có giá trị dự báo khoa học (E10) – kết quả chỉ để trao đổi cùng gia đình và tư vấn viên.')}
+          <p><b>{t('Dữ liệu mô phỏng')}</b> · {t('Thần số học không có giá trị dự báo khoa học – kết quả chỉ để trao đổi cùng gia đình và tư vấn viên.')}
             <span className="muted"> · Engine {ENGINE_VERSION} · DSS301 {tr('Nhóm', 'Group')} 2{lang === 'en' ? ` · ${t('Tri thức nguồn giữ ngôn ngữ gốc.')}` : ''}</span></p>
         </footer>
       </div>

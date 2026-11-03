@@ -1,211 +1,128 @@
-// L0 – một câu trả lời trước, chi tiết sau: thẻ Top-1 (+ Vì sao? + bước cải thiện) · (a) 4 KPI + cảnh báo
-// · (c) lựa chọn khác · (b) 3 insight · (d) What-if. Mọi câu chữ lấy từ mẫu câu tri thức hoặc số engine đã tính.
-import { LABELS, skillCode, targetAnalysis } from '../../shared/engine/index.js';
-import { explainProfile } from '../../shared/engine/view.js';
-import { fmt, signed, profileMajors } from '../format.js';
-import { Status, LabelChip, Warnings, ContribBar, ContribLegend, useTip } from './common.jsx';
+// L0 – câu trả lời cho người ra quyết định: ngành phù hợp nhất (+ % + 1 dòng nhận xét = khu vực insight)
+// · ngành phù hợp khác (xếp hạng Top-4) · 3 chỉ số + cảnh báo · Thử thay đổi (What-if). Công thức/ký hiệu nằm ở L1–L7 ("Vì sao?").
+import { skillName } from '../format.js';
+import { Status, LabelChip, Warnings } from './common.jsx';
 import WhatIf from './WhatIf.jsx';
-import { t, tr, num } from '../i18n.js';
+import { t, tr } from '../i18n.js';
+import { pct, repMajor, insightLine, nextStepPlain, stabWord } from '../plain.js';
 
 const link = (fn) => (e) => { e.preventDefault(); fn(); };
+const PCT_NOTE = () => tr('so với các ngành khác của bạn', 'compared with your other majors');
+const PCT_TIP = () => tr('Mức phù hợp tương đối: chỉ so sánh các ngành của chính bạn, không phải xác suất thành công.', 'Relative fit: only compares your own majors – not a probability of success.');
 
-// ---------------- (a) KPI – 4 ô, chi tiết trong tooltip ----------------
-const KPI_META = {
-  K_EC: ['Tín hiệu khớp (EC)', 'l2', (k) => (k.value == null ? '–' : `${k.value}/5`), () => t('xanh ≥ 2 · vàng 1 · đỏ 0')],
-  K_WEAK: ['Kỹ năng yếu (≤ 2)', 'whatif', (k) => k.value ?? '–', (k) => (k.skills?.length ? k.skills.join(', ') : t('không có'))],
-  K_STAB: ['Độ ổn định Top-1', 'l5', (k) => (k.value == null ? '–' : `${k.value}/5`), () => t('qua 5 cấu hình Sensitivity')],
-  K_ADMIT: ['Khả năng đỗ', 'l7', (k) => (k.value ? t(k.value) : '–'),
-    (k) => (k.detail ? `${k.detail.combo} ${fmt(k.detail.score, 2)} vs ${tr('ĐC', 'cut-off')} ${fmt(k.detail.cutoff, 2)}` : k.value ? t('chỉ 18 ngành HaUI') : t('chưa chọn ngành mục tiêu'))],
-};
-
-export function KpiStrip({ kpis, onGo }) {
-  const sr = kpis.find((k) => k.code === 'K_SR');
-  return (
-    <div className="kpis">
-      {kpis.filter((k) => KPI_META[k.code]).map((k) => {
-        const [name, layer, val, sub] = KPI_META[k.code];
-        const extra = k.code === 'K_WEAK' && sr ? ` · SR ${fmt(sr.value)} (${tr('ngưỡng', 'threshold')} ${fmt(0.625)})` : '';
-        return (
-          <button key={k.code} type="button" className={`kpi ${k.level}`} onClick={() => onGo(layer, k.profile)} title={`${sub(k)}${extra}`}>
-            <span className="k-name">{t(name)}</span>
-            <span className={`k-val num ${/[^\d/–\s]/.test(String(val(k))) ? 'txt' : ''}`}>{val(k)}</span>
-            <Status level={k.level} />
-          </button>
-        );
-      })}
-    </div>
-  );
+function WhyBtn({ onClick }) {
+  return <button type="button" className="why-btn" onClick={onClick}>{t('Vì sao?')}</button>;
 }
 
-// ---------------- thẻ câu trả lời (Top-1) ----------------
-/** Câu "làm gì để lên Ưu tiên" – từ Bước 5 (targetAnalysis) áp cho Top-1. */
-function nextStep(row, result, kb) {
-  if (!row || row.label === LABELS.PRIORITY) return null;
-  const ta = targetAnalysis(result, row.profile, { ...kb.params, p: result.p });
-  if (!ta) return null;
-  if (ta.status === 'EC_LOW') return tr(`EC = ${row.EC} < 2 nên hồ sơ này tối đa là Cân nhắc, dù tăng kỹ năng.`, `EC = ${row.EC} < 2, so this profile stays at Consider at most, even with higher skills.`);
-  const parts = [];
-  if (row.weakList.length) parts.push(tr(`nâng ${row.weakList.map((w) => `${w.skill} từ ${w.level} lên 3`).join(', ')}`, `raise ${row.weakList.map((w) => `${w.skill} from ${w.level} to 3`).join(', ')}`));
-  if (ta.gap > 1e-9) parts.push(tr(`thêm ${ta.stepsMain} bậc ở ${skillCode(row.A[0])} (SR còn thiếu ${fmt(ta.gap, 1)} điểm)`, `add ${ta.stepsMain} level(s) to ${skillCode(row.A[0])} (SR is ${fmt(ta.gap, 1)} points short)`));
-  return parts.length ? `${tr('Để lên Ưu tiên', 'To reach Priority')}: ${parts.join(tr(' và ', ' and '))}.` : null;
-}
-
-function AnswerCard({ out, kb, onGo }) {
+function TopCard({ out, kb, onGo }) {
   const { result } = out;
   const top = result.top[0];
-  if (!top) return <section className="panel answer"><p className="empty">{t('Không có hồ sơ nào có EC ≥ 1 – không xếp hạng được.')}</p></section>;
-  const why = explainProfile(out, kb, top.profile).filter((s) => s.code === 'WHY_NF' || s.code.startsWith('LABEL_'));
-  const step = nextStep(top, result, kb);
+  if (!top) return <section className="panel answer"><p className="empty">{tr('Chưa tìm được ngành phù hợp: không con số nào của bạn trùng với nhóm ngành nào.', 'No match yet: none of your numbers match any major group.')}</p></section>;
+  const m = repMajor(kb, top.profile, result.env);
   const tie = result.tiesWithTop1.length > 0;
+  const best = result.bestPriority;
   return (
     <section className="panel answer" aria-labelledby="z-top">
-      <span className="eyebrow">{t('Gợi ý phù hợp nhất')}</span>
-      <div className="answer-head">
-        <h2 id="z-top">{top.profile}</h2>
-        <LabelChip label={top.label} />
-        <span className="answer-majors">{profileMajors(kb, top.profile, 3).join(' · ')}</span>
+      <div className="answer-main">
+        <span className="eyebrow">{tr('Ngành phù hợp nhất', 'Best-fit major')}</span>
+        <h2 id="z-top">{m.name}</h2>
+        <div className="answer-meta">
+          <LabelChip label={top.label} />
+          {m.more > 0 && <span className="muted small">+{m.more} {tr('ngành cùng nhóm', 'more in this group')}</span>}
+        </div>
+        <p className="answer-why">{insightLine(top, result, kb)}</p>
+        {tie && <p className="small muted">{tr(`Ngang điểm với ${result.tiesWithTop1.map((p) => repMajor(kb, p, result.env).name).join(', ')}.`, `Tied with ${result.tiesWithTop1.map((p) => repMajor(kb, p, result.env).name).join(', ')}.`)}</p>}
+        {best && <p className="best-note">{tr('Lựa chọn "Ưu tiên" tốt nhất', 'Best "Priority" option')}: <b>{repMajor(kb, best.profile, result.env).name}</b> ({pct(best.C)}) <a href="#" onClick={link(() => onGo('l1', best.profile))}>{t('Vì sao?')}</a></p>}
       </div>
-      <p className="answer-why">{why.map((s) => num(s.text)).join(' ')}</p>
-      <div className="answer-bar">
-        <ContribBar row={top} weights={result.weights} normalize={result.normalize} />
-        <button type="button" className="c-val num" onClick={() => onGo('l1', top.profile)} title={t('Vì sao? (L1)')}>
-          {fmt(top.C)}<br /><span className="small">{t('Vì sao?')}</span>
-        </button>
+      <div className="answer-pct" title={PCT_TIP()}>
+        <span className="big-pct num">{pct(top.C)}</span>
+        <span className="pct-note">{PCT_NOTE()}</span>
+        <WhyBtn onClick={() => onGo('l1', top.profile)} />
       </div>
-      <ContribLegend />
-      <p className="small muted">{t('C = mức tương hợp tương đối, chỉ so sánh trong cùng một học sinh.')}{tie ? ` ${tr('Hòa điểm với', 'Tied with')} ${result.tiesWithTop1.join(', ')} – ${tr('xếp theo luật phá hòa.', 'ordered by the tie-break rule.')}` : ''}</p>
-      {step && <p className="answer-step"><b>→</b> {step} <a href="#" onClick={link(() => onGo('whatif'))}>{t('Thử ngay')}</a></p>}
-      {result.bestPriority && (
-        <p className="best-note"><b>{t('Ưu tiên tốt nhất:')}</b> {num(out.bestPriorityText?.text)} <a href="#" onClick={link(() => onGo('l1', result.bestPriority.profile))}>{t('Vì sao?')}</a></p>
-      )}
     </section>
   );
 }
 
-// ---------------- (c) lựa chọn khác + ngành mục tiêu ----------------
-function AltRow({ row, kb, result, onGo, note }) {
+function MajorRow({ row, kb, env, onGo, note }) {
+  const m = repMajor(kb, row.profile, env);
   return (
-    <li className="alt-row">
-      <span className="rank-no num">{row.rank ?? '–'}</span>
-      <span className="alt-main"><b>{row.profile}</b> <span className="muted small">{profileMajors(kb, row.profile, 2).join(' · ')}</span>{note && <span className="small"> {note}</span>}</span>
+    <li className="mrow">
+      <span className="mrow-name">{m.name}{m.more > 0 && <span className="muted small"> +{m.more}</span>}{note && <span className="small muted"> · {note}</span>}</span>
+      <span className="mrow-bar" title={PCT_TIP()}><span style={{ width: `${Math.max(0, Math.min(1, row.C ?? 0)) * 100}%` }} /></span>
+      <b className="num mrow-pct">{row.EC >= 1 ? pct(row.C) : '—'}</b>
       <LabelChip label={row.label} />
-      <ContribBar row={row} weights={result.weights} normalize={result.normalize} />
-      <button type="button" className="c-val num" onClick={() => onGo('l1', row.profile)} title={t('Vì sao? (L1)')}>
-        {row.EC >= 1 ? fmt(row.C) : '—'}<br /><span className="small">{t('Vì sao?')}</span>
-      </button>
+      <WhyBtn onClick={() => onGo('l1', row.profile)} />
     </li>
   );
 }
 
-export function Alternatives({ out, kb, onGo }) {
+export function OtherMajors({ out, kb, onGo }) {
   const { result, target } = out;
+  const env = result.env;
+  const ranked = result.rows.filter((r) => r.rank).sort((a, b) => a.rank - b.rank);
+  const rest = ranked.slice(1, 4);
   const tg = target?.analysis?.row;
-  const rest = result.top.slice(1);
-  const tgNote = t('← ngành mục tiêu');
+  const step = tg && nextStepPlain(tg, result, kb);
   return (
     <>
-      <div className="panel-head"><h2>{t('Lựa chọn khác')}</h2>
-        <a href="#" className="small" onClick={link(() => onGo('l5'))}>{t('Xem đủ 35 hồ sơ (L5) →')}</a></div>
-      {rest.length ? (
-        <ol className="alt-list">{rest.map((r) => <AltRow key={r.profile} row={r} kb={kb} result={result} onGo={onGo} note={tg && r.profile === tg.profile ? tgNote : null} />)}</ol>
-      ) : <p className="small muted">{t('Chỉ có 1 hồ sơ được xếp hạng.')}</p>}
+      <div className="panel-head"><h2>{tr('Ngành phù hợp khác', 'Other good fits')}</h2>
+        <a href="#" className="small" onClick={link(() => onGo('l5'))}>{tr('Xem bảng xếp hạng →', 'See full ranking →')}</a></div>
+      {rest.length ? <ol className="mlist">{rest.map((r) => <MajorRow key={r.profile} row={r} kb={kb} env={env} onGo={onGo} />)}</ol>
+        : <p className="small muted">{tr('Không có ngành nào khác được xếp hạng.', 'No other majors are ranked.')}</p>}
       {target && (
         <div className="target-box">
-          <h3>{t('Ngành mục tiêu')}: {target.major?.name_vi ?? target.text}</h3>
-          {!target.major && <p className="small err">{t('Không có trong 300 ngành – không chấm được (V_MAJOR).')}</p>}
-          {tg && result.top[0]?.profile !== tg.profile && !rest.some((r) => r.profile === tg.profile) && (
-            <ol className="alt-list"><AltRow row={tg} kb={kb} result={result} onGo={onGo} note={tgNote} /></ol>
-          )}
-          {target.explanation?.map((e) => <p key={e.code} className="small">{num(e.text)}</p>)}
+          <h3>{tr('Ngành bạn đang nhắm', 'Your target major')}: {target.major?.name_vi ?? target.text}</h3>
+          {!target.major && <p className="small err">{tr('Ngành này không có trong danh sách 300 ngành nên không chấm được.', 'This major is not in the 300-major list, so it cannot be scored.')}</p>}
+          {tg && <ol className="mlist"><MajorRow row={tg} kb={kb} env={env} onGo={onGo} note={tg.rank ? `${tr('hạng', 'rank')} ${tg.rank}` : tr('không xếp hạng', 'not ranked')} /></ol>}
+          {step && <p className="small">→ {tr('Muốn đạt "Ưu tiên"', 'To reach "Priority"')}: {step}.</p>}
         </div>
       )}
     </>
   );
 }
 
-// ---------------- (b) insight – mỗi câu suy ra trực tiếp từ số đã tính; L0 chỉ hiện 3 câu giá trị nhất ----------------
-export function buildInsights(out, kb, person) {
-  const { result, stability } = out;
-  const top = result.top;
-  const ins = [];
-  if (top.length >= 2) {
-    const d = top[0].C - top[1].C;
-    if (d > 1e-9) ins.push({ key: 'gap', layer: 'l5', text: tr(`${top[0].profile} dẫn trước ${top[1].profile} ${fmt(d)} điểm C${d < 0.05 ? ' – cách biệt nhỏ, nên xem cả hai' : ''}.`, `${top[0].profile} leads ${top[1].profile} by ${fmt(d)} C points${d < 0.05 ? ' – a small gap, consider both' : ''}.`) });
-  }
-  if (top[0]?.contrib) {
-    const parts = [[tr('thần số học (α·NF*)', 'numerology (α·NF*)'), top[0].contrib.NF], [tr('kỹ năng (β·SR*)', 'skills (β·SR*)'), top[0].contrib.SR], [tr('môi trường (γ·ENV*)', 'environment (γ·ENV*)'), top[0].contrib.ENV]];
-    const [name, v] = parts.reduce((a, b) => (b[1] > a[1] ? b : a));
-    ins.push({ key: 'contrib', layer: 'l1', profile: top[0].profile, text: tr(`Kết quả Top-1 đến chủ yếu từ ${name} = ${fmt(v)} / ${fmt(top[0].C)}.`, `Top-1 comes mainly from ${name} = ${fmt(v)} / ${fmt(top[0].C)}.`) });
-  }
-  if (stability) {
-    const changed = stability.runs.filter((r) => r.top1 !== stability.runs[0].top1).map((r) => `${r.name} → ${r.top1 ?? '–'}`);
-    ins.push({ key: 'stab', layer: 'l5', text: changed.length ? tr(`Top-1 giữ ở ${stability.count}/5 cấu hình; đổi khi: ${changed.join('; ')}.`, `Top-1 holds in ${stability.count}/5 configurations; changes under: ${changed.join('; ')}.`) : tr('Top-1 giữ nguyên ở cả 5 cấu hình – kết quả ổn định.', 'Top-1 is the same in all 5 configurations – a stable result.') });
-  }
-  const weak = Object.entries(person.skillsNow).filter(([, r]) => r <= kb.params.Weak_max).map(([a, r]) => `${skillCode(a)} = ${r}`);
-  if (weak.length) {
-    const n = result.rows.filter((r) => r.label === LABELS.CHALLENGE).length;
-    ins.push({ key: 'weak', layer: 'whatif', text: tr(`Kỹ năng ≤ 2 (${weak.join(', ')}) làm ${n}/35 hồ sơ thành "Thử thách".`, `Skills ≤ 2 (${weak.join(', ')}) make ${n}/35 profiles "Challenge".`) });
-  }
-  const pri = result.rows.filter((r) => r.label === LABELS.PRIORITY).length;
-  ins.push({ key: 'labels', layer: 'l5', text: tr(`${pri}/35 hồ sơ đạt Ưu tiên, ${result.ranked.length}/35 có EC ≥ 1.`, `${pri}/35 profiles reach Priority, ${result.ranked.length}/35 have EC ≥ 1.`) });
-  return ins;
-}
-
-export function Insights({ out, kb, person, onGo, max = 3 }) {
-  const items = buildInsights(out, kb, person).slice(0, max);
+function Indicators({ out, kb, onGo }) {
+  const K = Object.fromEntries(out.kpis.map((k) => [k.code, k]));
+  const stab = K.K_STAB, weak = K.K_WEAK, adm = K.K_ADMIT;
+  const weakRow = out.result.rows.find((r) => r.profile === weak?.profile);
+  const items = [
+    { code: 'K_STAB', name: tr('Độ ổn định kết quả', 'Result stability'), layer: 'l5', level: stab?.level,
+      val: stab?.value == null ? '–' : stabWord(stab.value), tip: tr(`${stab?.value ?? '–'}/5 cách tính cho cùng ngành phù hợp nhất`, `${stab?.value ?? '–'}/5 methods give the same best fit`) },
+    { code: 'K_WEAK', name: tr('Kỹ năng cần cải thiện', 'Skills to improve'), layer: 'whatif', level: weak?.level,
+      val: weakRow?.weakList.length ? weakRow.weakList.map((w) => skillName(kb, w.archetype)).join(', ') : tr('Không có', 'None'),
+      tip: tr('Kỹ năng liên quan tới ngành phù hợp nhất mà bạn tự chấm từ 2/5 trở xuống', 'Related skills you rated 2/5 or lower') },
+    { code: 'K_ADMIT', name: tr('Khả năng đỗ', 'Admission chance'), layer: 'l7', level: adm?.level,
+      val: adm?.value ? t(adm.value) : tr('Chưa chọn ngành', 'No target yet'), tip: tr('Chỉ có dữ liệu cho 18 ngành của ĐH Công nghiệp Hà Nội', 'Only available for 18 HaUI majors') },
+  ];
   return (
-    <>
-      <div className="panel-head"><h2>{t('Nhận định')}</h2></div>
-      <ul className="insights">
-        {items.map((x) => (
-          <li key={x.key}>{x.text} <a href="#" className="small" onClick={link(() => onGo(x.layer, x.profile))}>{x.layer === 'whatif' ? t('thử What-if') : '→'}</a></li>
-        ))}
-      </ul>
-    </>
-  );
-}
-
-/** Phân bố nhãn 35 hồ sơ (thanh ngang) – hiển thị ở L5. */
-export function LabelDistribution({ rows }) {
-  const tip = useTip();
-  const order = [LABELS.PRIORITY, LABELS.CONSIDER, LABELS.CHALLENGE, LABELS.NONE];
-  const cls = { [LABELS.PRIORITY]: 'var(--good)', [LABELS.CONSIDER]: 'var(--warn)', [LABELS.CHALLENGE]: 'var(--bad)', [LABELS.NONE]: 'var(--ink-3)' };
-  const max = Math.max(1, ...order.map((l) => rows.filter((r) => r.label === l).length));
-  return (
-    <div style={{ display: 'grid', gap: 4 }} aria-label={t('Phân bố nhãn của 35 hồ sơ')}>
-      {order.map((l) => {
-        const n = rows.filter((r) => r.label === l).length;
-        return (
-          <div key={l} style={{ display: 'grid', gridTemplateColumns: '110px 1fr 26px', gap: 6, alignItems: 'center', fontSize: '0.8rem' }}>
-            <span>{t(l)}</span>
-            <div style={{ height: 12 }} tabIndex={0} {...tip(`${t(l)}: ${n}/35 ${tr('hồ sơ', 'profiles')} – ${rows.filter((r) => r.label === l).map((r) => r.profile).join(', ') || t('không có')}`)}>
-              {n > 0 && <div style={{ width: `${(n / max) * 100}%`, height: '100%', background: cls[l], borderRadius: '0 4px 4px 0' }} />}
-            </div>
-            <span className="num" style={{ textAlign: 'right' }}>{n}</span>
-          </div>
-        );
-      })}
+    <div className="kpis">
+      {items.map((k) => (
+        <button key={k.code} type="button" className={`kpi ${k.level ?? 'grey'}`} onClick={() => onGo(k.layer, weak?.profile)} title={k.tip}>
+          <span className="k-name">{k.name}</span>
+          <span className="k-val">{k.val}</span>
+          <Status level={k.level ?? 'grey'} />
+        </button>
+      ))}
     </div>
   );
 }
 
-// ---------------- L0 ----------------
-export default function Dashboard({ out, base, kb, person, onGo, whatif }) {
+export default function Dashboard({ out, base, kb, onGo, whatif }) {
   const r = out.result;
+  const env = r.env;
   const moved = base && base.result.top[0]?.profile !== r.top[0]?.profile;
   return (
     <div className="l0">
       <div className="l0-main">
         {moved && (
-          <p className="whatif-on" role="status"><b>{t('What-if đang bật:')}</b> Top-1 {tr('đổi', 'changes')} {base.result.top[0]?.profile ?? '–'} → {r.top[0]?.profile ?? '–'} (C {signed((r.top[0]?.C ?? 0) - (base.result.top[0]?.C ?? 0))}).</p>
+          <p className="whatif-on" role="status">{tr('Đang thử thay đổi', 'Trying changes')}: {tr('ngành phù hợp nhất đổi từ', 'best fit changes from')} <b>{base.result.top[0] ? repMajor(kb, base.result.top[0].profile, base.result.env).name : '–'}</b> → <b>{r.top[0] ? repMajor(kb, r.top[0].profile, env).name : '–'}</b>.</p>
         )}
-        <AnswerCard out={out} kb={kb} onGo={onGo} />
+        <TopCard out={out} kb={kb} onGo={onGo} />
+        <section className="panel" aria-label={tr('Ngành phù hợp khác', 'Other good fits')}><OtherMajors out={out} kb={kb} onGo={onGo} /></section>
         <section className="zone-kpi" aria-label={t('Chỉ số chính & cảnh báo')}>
-          <KpiStrip kpis={out.kpis} onGo={onGo} />
+          <Indicators out={out} kb={kb} onGo={onGo} />
           <Warnings warnings={out.warnings} />
         </section>
-        <section className="panel" aria-label={t('Lựa chọn khác')}><Alternatives out={out} kb={kb} onGo={onGo} /></section>
-        <section className="panel" aria-label={t('Nhận định')}><Insights out={out} kb={kb} person={person} onGo={onGo} /></section>
       </div>
       <section className="panel zone-whatif" aria-labelledby="z-d" id="whatif"><WhatIf {...whatif} kb={kb} out={out} base={base} /></section>
     </div>

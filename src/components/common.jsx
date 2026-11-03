@@ -1,5 +1,6 @@
 // Phần tử dùng chung: tooltip, biểu tượng trạng thái (luôn kèm chữ – không dùng màu đơn lẻ), chip nhãn, thanh đóng góp C.
 import { createContext, useContext, useState, useCallback } from 'react';
+import { LABELS } from '../../shared/engine/index.js';
 import { fmt, LABEL_CLASS } from '../format.js';
 import { t, tr, num, localizeKb } from '../i18n.js';
 
@@ -90,3 +91,27 @@ export const Axis01 = () => (
     <span className="c-col" />
   </div>
 );
+
+/** Phân bố nhãn của 35 nhóm ngành (thanh ngang, màu trạng thái luôn kèm chữ). */
+export function LabelDistribution({ rows }) {
+  const tip = useTip();
+  const order = [LABELS.PRIORITY, LABELS.CONSIDER, LABELS.CHALLENGE, LABELS.NONE];
+  const cls = { [LABELS.PRIORITY]: 'var(--good)', [LABELS.CONSIDER]: 'var(--warn)', [LABELS.CHALLENGE]: 'var(--bad)', [LABELS.NONE]: 'var(--ink-3)' };
+  const max = Math.max(1, ...order.map((l) => rows.filter((r) => r.label === l).length));
+  return (
+    <div style={{ display: 'grid', gap: 4 }} aria-label={t('Phân bố nhãn của 35 hồ sơ')}>
+      {order.map((l) => {
+        const n = rows.filter((r) => r.label === l).length;
+        return (
+          <div key={l} style={{ display: 'grid', gridTemplateColumns: '110px 1fr 26px', gap: 6, alignItems: 'center', fontSize: '0.84rem' }}>
+            <span>{t(l)}</span>
+            <div style={{ height: 12 }} tabIndex={0} {...tip(`${t(l)}: ${n}/35`)}>
+              {n > 0 && <div style={{ width: `${(n / max) * 100}%`, height: '100%', background: cls[l], borderRadius: '0 4px 4px 0' }} />}
+            </div>
+            <span className="num" style={{ textAlign: 'right' }}>{n}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}

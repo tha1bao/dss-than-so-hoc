@@ -9,10 +9,8 @@ import { L1, L2, L3, L4, L5, L6, L7 } from '../components/Layers.jsx';
 import { t, tr, localizeKb } from '../i18n.js';
 
 export const LAYERS = [
-  ['l0', 'L0 Tổng quan', ''], ['l1', 'L1 Vì sao?', 'phân rã C của từng hồ sơ'], ['l2', 'L2 Tín hiệu', 'các con số từ ngày sinh và họ tên'],
-  ['l3', 'L3 Ánh xạ', 'tín hiệu → archetype → hồ sơ → ngành'], ['l4', 'L4 Công thức', 'công thức với số thật'],
-  ['l5', 'L5 Tính chi tiết', '35 hồ sơ, độ ổn định, so sánh persona'], ['l6', 'L6 Tri thức nguồn', 'ý nghĩa con số, quy tắc, trích dẫn'],
-  ['l7', 'L7 Dữ liệu & lineage', 'lần tính, điểm chuẩn, nguồn dữ liệu'],
+  ['l0', 'Kết quả', 'Results'], ['l1', 'Vì sao?', 'Why?'], ['l2', 'Con số của bạn', 'Your numbers'], ['l3', 'Kết nối', 'Connections'],
+  ['l4', 'Công thức', 'Formulas'], ['l5', 'Bảng xếp hạng', 'Ranking'], ['l6', 'Nguồn', 'Sources'], ['l7', 'Dữ liệu', 'Data'],
 ];
 const personaOf = (role) => ({ student: 'HS', parent: 'PH', counselor: 'TVV' }[role] ?? 'TVV');
 const targetFields = (kb, text) => {
@@ -114,18 +112,10 @@ export default function StudentView({ source, user, layer, sel: selParam, go }) 
       {layer !== 'l0' && (
         <nav className="layers" aria-label={t('Tầng giải thích')}>
           <a href={`#${base0}/l0`} className="back">{t('← Kết quả')}</a>
-          {LAYERS.slice(1).map(([k, name]) => <a key={k} href={`#${base0}/${k}?p=${sel}`} aria-current={layer === k ? 'page' : undefined}>{t(name)}</a>)}
+          {LAYERS.slice(1).map(([k, vi, en]) => <a key={k} href={`#${base0}/${k}?p=${sel}`} aria-current={layer === k ? 'page' : undefined}><small>{k.toUpperCase()}</small> {tr(vi, en)}</a>)}
         </nav>
       )}
-      {layer === 'l0' && <Dashboard out={out} base={base} kb={kbL} person={p2} onGo={goLayer} whatif={whatif} />}
-      {layer === 'l0' && (
-        <details className="panel more">
-          <summary>{t('Xem chi tiết tính toán (L1–L7)')}</summary>
-          <ul className="more-list">
-            {LAYERS.slice(1).map(([k, name, desc]) => <li key={k}><a href={`#${base0}/${k}?p=${sel}`}>{t(name)}</a> <span className="small muted">{t(desc)}</span></li>)}
-          </ul>
-        </details>
-      )}
+      {layer === 'l0' && <Dashboard out={out} base={base} kb={kbL} onGo={goLayer} whatif={whatif} />}
       {layer === 'l1' && <L1 {...props} />}
       {layer === 'l2' && <L2 {...props} />}
       {layer === 'l3' && <L3 {...props} />}
@@ -133,7 +123,7 @@ export default function StudentView({ source, user, layer, sel: selParam, go }) 
       {layer === 'l5' && <L5 {...props} compare={compare} />}
       {layer === 'l6' && <L6 {...props} />}
       {layer === 'l7' && <L7 {...props} meta={{ runId: baseRun?.runId, simulated: stu.simulated }} />}
-      {layer !== 'l0' && dirty && <p className="small muted" style={{ marginTop: 8 }}>{t('Đang hiển thị theo kịch bản What-if (xem/đặt lại ở')} <a href="#" onClick={(e) => { e.preventDefault(); goLayer('whatif'); }}>L0</a>).</p>}
+      {layer !== 'l0' && dirty && <p className="small muted" style={{ marginTop: 8 }}>{tr('Đang hiển thị kết quả đã thử thay đổi', 'Showing your what-if changes')} (<a href="#" onClick={(e) => { e.preventDefault(); goLayer('whatif'); }}>{tr('đặt lại ở trang Kết quả', 'reset on the Results page')}</a>).</p>}
     </>
   );
 }
