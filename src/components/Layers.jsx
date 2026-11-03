@@ -24,6 +24,32 @@ const SIG_NAME = {
 const sigName = (g) => tr(SIG_NAME[g][0], SIG_NAME[g][1]);
 const COMP = [['NF', 'nf', 'Con số của bạn', 'Your numbers'], ['SR', 'sr', 'Kỹ năng', 'Skills'], ['ENV', 'env', 'Môi trường', 'Environment']];
 
+const ARROW_VI = {
+  'Arrow of the Planner': 'Thế mạnh: Lập kế hoạch & Tổ chức',
+  'Arrow of Will': 'Thế mạnh: Ý chí & Nghị lực',
+  'Arrow of Frustration': 'Vùng rèn luyện: Tính kiên nhẫn & Vượt khó',
+  'Arrow of Activity': 'Thế mạnh: Năng động & Nhiệt huyết',
+  'Arrow of Passivity': 'Vùng rèn luyện: Tinh thần chủ động & Dấn thân',
+  'Arrow of Practicality': 'Thế mạnh: Thực tế & Khéo léo',
+  'Arrow of Disorder': 'Vùng rèn luyện: Kỷ luật & Ngăn nắp',
+  'Arrow of Emotional Balance': 'Thế mạnh: Cân bằng cảm xúc',
+  'Arrow of Hypersensitivity': 'Vùng rèn luyện: Cân bằng cảm xúc & Giảm âu lo',
+  'Arrow of Intellect': 'Thế mạnh: Tư duy logic & Sáng dạ',
+  'Arrow of Poor Memory': 'Vùng rèn luyện: Phương pháp ghi nhớ & Tập trung',
+  'Arrow of Determination': 'Thế mạnh: Quyết tâm & Kiên định',
+  'Arrow of Procrastination': 'Vùng rèn luyện: Quyết đoán & Tránh chần chừ',
+  'Arrow of Spirituality': 'Thế mạnh: Trực giác & Nhạy cảm tinh thần',
+  'Arrow of Scepticism': 'Vùng rèn luyện: Sự cởi mở & Lòng tin vào bản thân',
+};
+
+function formatArrow(arrStr) {
+  const [code, ...rest] = arrStr.split(': ');
+  const name = rest.join(': ');
+  const vi = ARROW_VI[name];
+  if (!vi) return arrStr;
+  return tr(`${code}: ${vi} (${name})`, `${code}: ${name}`);
+}
+
 function useLayer(name) {
   const [d, setD] = useState(null);
   const [err, setErr] = useState(null);
@@ -78,39 +104,33 @@ export function L1({ out, kb, sel, setSel }) {
       : tr('Không con số nào của bạn trùng với nhóm ngành này.', 'None of your numbers match this group.'),
     SR: tr(`Kỹ năng liên quan (${row.A.map((a) => skillName(kb, a)).join('; ')}) của bạn đạt trung bình ${fmt(avgSkill(row.SR), 1)}/5; mức cần là ${fmt(SKILL_NEED(kb), 1)}/5.`,
       `Your related skills (${row.A.map((a) => skillName(kb, a)).join('; ')}) average ${fmt(avgSkill(row.SR), 1)}/5; the bar is ${fmt(SKILL_NEED(kb), 1)}/5.`),
-    ENV: row.ENV ? tr(`Môi trường bạn muốn (${envName(kb, r.env)}) trùng với nhóm ngành này.`, `The environment you want (${envName(kb, r.env)}) matches this group.`)
-      : tr(`Môi trường bạn muốn (${envName(kb, r.env)}) khác môi trường của nhóm ngành (${envName(kb, row.env)}).`, `The environment you want (${envName(kb, r.env)}) differs from this group's (${envName(kb, row.env)}).`),
+    ENV: row.ENV ? tr(`Môi trường "${envName(kb, r.env)}" đúng với lựa chọn của bạn.`, `"${envName(kb, r.env)}" matches the environment you chose.`)
+      : tr(`Môi trường "${envName(kb, row.env)}" khác với môi trường bạn chọn ("${envName(kb, r.env)}").`, `"${envName(kb, row.env)}" differs from your choice ("${envName(kb, r.env)}").`),
   };
+
   return (
-    <>
-      <section className="panel">
-        <Head out={out} kb={kb} row={row} setSel={setSel} />
-        {row.EC >= 1 ? (
-          <p className="l1-pct"><b className="num">{pct(row.C)}</b> <span className="muted">{tr('phù hợp, so với các ngành khác của bạn', 'fit, compared with your other majors')}{row.rank ? ` · ${tr('hạng', 'rank')} ${row.rank}/${r.nEligible}` : ''}</span></p>
-        ) : <p className="l1-pct muted">{tr('Không được xếp hạng.', 'Not ranked.')}</p>}
-        {row.contrib && <p className="small muted">{tr('Con số này được ghép từ 3 phần:', 'This number is made of 3 parts:')}</p>}
-        <div className="parts">
-          {COMP.map(([k, cls, vi, en]) => (
+    <section className="panel">
+      <Head out={out} kb={kb} row={row} setSel={setSel} />
+      <div className="l1-pct">{tr('Mức phù hợp', 'Overall fit')}: <b>{row.EC >= 1 ? pct(row.C) : '—'}</b> {row.rank ? `(${tr('hạng', 'rank')} ${row.rank}/${r.ranked.length})` : `(${tr('không xếp hạng', 'not ranked')})`}</div>
+      <div className="parts">
+        {COMP.map(([k, cls, name]) => {
+          const w = row.contrib[k] ?? 0;
+          return (
             <div key={k} className="part">
-              <span className="part-name">{tr(vi, en)}</span>
-              <span className="part-bar"><span className={`bar-seg ${cls}`} style={{ width: `${Math.max(0, (row.contrib?.[k] ?? 0)) * 100}%` }} /></span>
-              <b className="num">{row.contrib ? pct(row.contrib[k]) : '—'}</b>
+              <span className="part-name">{t(name)}</span>
+              <div className="part-bar"><span className={`bar-seg ${cls}`} style={{ width: `${Math.max(0, Math.min(1, w)) * 100}%` }} /></div>
+              <span className="num muted small">{fmt(w, 2)}</span>
               <span className="part-say">{say[k]}</span>
             </div>
-          ))}
-        </div>
-        <div className="l1-label">
-          <p><b>{tr(`Vì sao là "${t(row.label)}"?`, `Why "${t(row.label)}"?`)}</b> {labelPlain(row, kb)}</p>
-          {step && <p><b>{tr('Muốn lên "Ưu tiên":', 'To reach "Priority":')}</b> {step}.</p>}
-          {ties.length > 0 && <p className="small muted">{tr(`Ngang điểm với ${ties.map((x) => repMajor(kb, x.profile, r.env).name).join(', ')}; nhóm đứng trước trong danh sách được xếp trên.`, `Tied with ${ties.map((x) => repMajor(kb, x.profile, r.env).name).join(', ')}; the group listed first ranks higher.`)}</p>}
-          <p className="small"><a href={layerHref('l4', row.profile)}>{tr('Xem cách tính chi tiết →', 'See the detailed calculation →')}</a></p>
-        </div>
-      </section>
-      <Teacher title={tr('câu giải thích từ mẫu tri thức', 'knowledge-base explanation sentences')}>
-        <ul className="insights">{explainProfile(out, kb, row.profile).map((s) => <li key={s.code}>{num(s.text)} <span className="src">[{s.code}]</span></li>)}</ul>
-        {out.target?.analysis?.profile === row.profile && out.target.explanation?.map((e) => <p key={e.code} className="small">{num(e.text)} <span className="src">[{e.code}]</span></p>)}
-      </Teacher>
-    </>
+          );
+        })}
+      </div>
+      <div className="l1-label">
+        <p><b>{t('Đánh giá')}:</b> {labelPlain(row, r, kb)}</p>
+        {step && <p><b>{tr('Bước tiếp theo để lên "Ưu tiên"', 'Next step to reach "Priority"')}:</b> {step}.</p>}
+        {ties.length > 0 && <p className="small muted">{tr(`Hòa điểm với ${ties.length} nhóm ngành khác:`, `Tied with ${ties.length} other group(s):`)} {ties.map((x) => repMajor(kb, x.profile, r.env).name).join(', ')}. {tr('Nhóm có mã đứng trước được xếp trên.', 'The group with the earlier code is ranked higher.')}</p>}
+      </div>
+    </section>
   );
 }
 
@@ -125,7 +145,7 @@ function derivePlain(g, sig) {
     case 'G5': return `${tr('Đổi mỗi chữ cái thành số (A = 1 … I = 9, J = 1 …) rồi cộng', 'Turn each letter into a number (A = 1 … I = 9, J = 1 …) and add')}: ${name} = ${chainText(sig.nameTotal, py00Chain(sig.nameTotal))}`;
     case 'G6': {
       const adj = sig.hebAdj !== sig.hebTotal;
-      return `${tr('Đổi chữ cái theo bảng Hebrew rồi cộng', 'Use the Hebrew letter table and add')}: ${adj ? tr(`${sig.hebTotal}, trừ phần chữ ghép (TH, PH, TZ) còn `, `${sig.hebTotal}, minus digraphs (TH, PH, TZ) = `) : ''}${chainText(sig.hebAdj, rootChain(sig.hebAdj))}`;
+      return `${tr('Quy đổi họ tên theo âm tiết Kabala: tương ứng năng lượng số', 'Name evaluated by Kabbalah syllables: energy number')} ${chainText(sig.hebAdj, rootChain(sig.hebAdj))}${adj ? tr(' (đã chuẩn hóa các chữ ghép TH, PH, TZ)', ' (normalized digraphs TH, PH, TZ)') : ''}`;
     }
     default: return '';
   }
@@ -178,8 +198,8 @@ export function L2({ out, kb, sel, setSel }) {
         </details>
       )}
       {extras && (
-        <details className="panel teacher">
-          <summary>{tr('Chỉ số tham khảo khác (không dùng để chấm)', 'Other reference numbers (not used in scoring)')}</summary>
+        <details className="panel teacher" open>
+          <summary>{tr('Chỉ số tham khảo & Phân tích tâm lý học đường (không dùng để chấm)', 'Reference indicators & Growth areas (not used in scoring)')}</summary>
           <div className="teacher-body grid2">
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 44px)', gap: 3 }} aria-label={t('Biểu đồ ngày sinh 3×3')}>
               {[3, 6, 9, 2, 5, 8, 1, 4, 7].map((k) => <div key={k} className="letter" style={{ height: 40 }}><b>{extras.birthChart[k] ? String(k).repeat(extras.birthChart[k]) : '·'}</b></div>)}
@@ -187,7 +207,26 @@ export function L2({ out, kb, sel, setSel }) {
             <table className="tbl"><tbody>
               <tr><td>{tr('Số linh hồn (Soul Urge)', 'Soul Urge')}</td><td className="r">{sig.soulUrge}</td></tr>
               <tr><td>{t('Số thiếu (PY03)')}</td><td>{extras.missing.join(', ') || tr('không', 'none')}</td></tr>
-              <tr><td>{t('Mũi tên (PY04)')}</td><td>{extras.arrows.join('; ') || tr('không', 'none')}</td></tr>
+              <tr>
+                <td>{t('Mũi tên tâm lý (PY04)')}</td>
+                <td>
+                  {extras.arrows.length > 0 ? (
+                    <ul className="arrow-list">
+                      {extras.arrows.map((a) => {
+                        const isGrowth = a.includes('Frustration') || a.includes('Passivity') || a.includes('Disorder') || a.includes('Hypersensitivity') || a.includes('Poor Memory') || a.includes('Procrastination') || a.includes('Scepticism');
+                        return (
+                          <li key={a} className={isGrowth ? 'arrow-growth' : 'arrow-strength'}>
+                            <span>{isGrowth ? '🌱 ' : '★ '}</span>{formatArrow(a)}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  ) : tr('không có trục đầy/trống', 'none')}
+                  <p className="small muted" style={{ marginTop: 4 }}>
+                    {tr('💡 Các "vùng rèn luyện" là tiềm năng có thể bồi dưỡng thêm trong môi trường đại học, không phải khuyết điểm cố định.', '💡 Growth areas are potentials that can be nurtured in university, not fixed flaws.')}
+                  </p>
+                </td>
+              </tr>
               <tr><td>Outer expression (PY06)</td><td className="r">{extras.outer}</td></tr>
               <tr><td>Vedic: psychic / destiny / name</td><td className="r">{extras.vedic.psychicType} · {extras.vedic.destiny} · {extras.vedic.name}</td></tr>
               <tr><td>{t('Kabala: khóa ngày sinh · hành tinh')}</td><td className="r">{extras.kabala.birthKey} · {extras.kabala.birthPlanet}</td></tr>
@@ -205,6 +244,8 @@ export function L3({ out, kb, person, sel, setSel }) {
   const { sig, result } = out;
   const row = rowOf(out, sel);
   const env = result.env;
+  const [hoverArch, setHoverArch] = useState(null);
+
   const sigArch = new Set(result.groups.map((g) => sig.arch[g]));
   const archs = [...new Set([...sigArch, ...(row?.A ?? [])])].sort((a, b) => a - b);
   const ranked = result.rows.filter((r) => r.rank).sort((a, b) => a.rank - b.rank);
@@ -213,25 +254,28 @@ export function L3({ out, kb, person, sel, setSel }) {
   const majors = row ? repMajor(kb, row.profile, env).all : [];
   const mShow = majors.slice(0, 5);
 
-  const W = 960, colX = [0, 210, 500, 760], colW = [170, 240, 210, 200], H0 = 30, GAP = 12;
+  const W = 1080, colX = [0, 200, 560, 850], colW = [160, 320, 250, 220], H0 = 34, GAP = 12;
   const place = (n, h) => Array.from({ length: n }, (_, i) => 40 + i * (h + GAP));
   const sigY = place(SIG_ORDER.length, H0), archY = place(archs.length, H0), profY = place(profs.length, 44), majY = place(mShow.length + (majors.length > 5 ? 1 : 0), H0);
   const height = Math.max(...[sigY, archY, profY, majY].map((ys) => (ys.length ? ys[ys.length - 1] : 0))) + 60;
   const pathOf = (x1, y1, x2, y2) => { const m = (x1 + x2) / 2; return `M${x1} ${y1} C ${m} ${y1}, ${m} ${y2}, ${x2} ${y2}`; };
   const archIdx = (a) => archs.indexOf(a);
+
   const edges = [];
   SIG_ORDER.forEach((g, i) => {
     const j = archIdx(sig.arch[g]); if (j < 0) return;
-    edges.push({ k: `s${g}`, d: pathOf(colX[0] + colW[0], sigY[i] + H0 / 2, colX[1], archY[j] + H0 / 2), on: row?.khop[g] > 0 });
+    const isConn = hoverArch === null || hoverArch === sig.arch[g];
+    edges.push({ k: `s${g}`, d: pathOf(colX[0] + colW[0], sigY[i] + H0 / 2, colX[1], archY[j] + H0 / 2), on: row?.khop[g] > 0, highlight: hoverArch === sig.arch[g], faint: !isConn });
   });
   profs.forEach((p, pi) => p.A.forEach((a) => {
     const j = archIdx(a); if (j < 0) return;
     const isSel = p === row;
     if (!isSel && !sigArch.has(a)) return;
-    edges.push({ k: `a${p.profile}${a}`, d: pathOf(colX[1] + colW[1], archY[j] + H0 / 2, colX[2], profY[pi] + 22), on: isSel && sigArch.has(a), faint: !isSel });
+    const isConn = hoverArch === null || hoverArch === a;
+    edges.push({ k: `a${p.profile}${a}`, d: pathOf(colX[1] + colW[1], archY[j] + H0 / 2, colX[2], profY[pi] + 22), on: isSel && sigArch.has(a), highlight: hoverArch === a, faint: !isSel || !isConn });
   }));
   const selIdx = profs.indexOf(row);
-  if (selIdx >= 0) majY.forEach((y, i) => edges.push({ k: `m${i}`, d: pathOf(colX[2] + colW[2], profY[selIdx] + 22, colX[3], y + H0 / 2), on: true }));
+  if (selIdx >= 0) majY.forEach((y, i) => edges.push({ k: `m${i}`, d: pathOf(colX[2] + colW[2], profY[selIdx] + 22, colX[3], y + H0 / 2), on: true, highlight: false }));
 
   return (
     <>
@@ -239,17 +283,24 @@ export function L3({ out, kb, person, sel, setSel }) {
         <Head out={out} kb={kb} row={row} setSel={setSel} />
         <div className="flow-wrap">
           <svg viewBox={`0 0 ${W} ${height}`} className="flow-svg" role="img" aria-label={tr('Sơ đồ: con số → nét tính cách → nhóm ngành → ngành', 'Diagram: numbers → traits → major groups → majors')}>
-            {[tr('Con số của bạn', 'Your numbers'), tr('Nét tính cách · kỹ năng của bạn', 'Trait · your skill'), tr('Nhóm ngành (bấm để đổi)', 'Major group (click to switch)'), tr('Ngành', 'Majors')].map((h, i) => <text key={h} x={colX[i]} y={20} className="flow-h">{h}</text>)}
-            {edges.map((e) => <path key={e.k} d={e.d} className={`edge ${e.on ? 'on' : e.faint ? 'faint' : 'off'}`} />)}
+            {[tr('Con số của bạn', 'Your numbers'), tr('Nét tính cách · kỹ năng của bạn', 'Trait · your skill'), tr('Nhóm ngành (bấm để đổi)', 'Major group (click to switch)'), tr('Ngành cụ thể', 'Majors')].map((h, i) => <text key={h} x={colX[i]} y={20} className="flow-h">{h}</text>)}
+            {edges.map((e) => <path key={e.k} d={e.d} className={`edge ${e.highlight ? 'edge-highlight' : e.on ? 'on' : e.faint ? 'faint' : 'off'}`} />)}
             {SIG_ORDER.map((g, i) => (
               <g key={g} className={`fnode ${row?.khop[g] > 0 ? 'on' : ''}`} transform={`translate(${colX[0]},${sigY[i]})`}>
-                <rect width={colW[0]} height={H0} rx="6" /><text x="10" y="20">{trunc(sigName(g), 17)}: <tspan className="b">{sig[g]}</tspan></text>
+                <rect width={colW[0]} height={H0} rx="6" /><text x="10" y="22">{trunc(sigName(g), 17)}: <tspan className="b">{sig[g]}</tspan></text>
               </g>
             ))}
             {archs.map((a, i) => (
-              <g key={a} className={`fnode ${row?.A.includes(a) && sigArch.has(a) ? 'on' : !sigArch.has(a) ? 'dim' : ''}`} transform={`translate(${colX[1]},${archY[i]})`}>
+              <g
+                key={a}
+                className={`fnode ${row?.A.includes(a) && sigArch.has(a) ? 'on' : !sigArch.has(a) ? 'dim' : ''} ${hoverArch === a ? 'hovered' : ''}`}
+                transform={`translate(${colX[1]},${archY[i]})`}
+                onMouseEnter={() => setHoverArch(a)}
+                onMouseLeave={() => setHoverArch(null)}
+              >
                 <title>{`${skillName(kb, a)} – ${kb.archetypes.find((x) => x.number === a)?.trait ?? ''}`}</title>
-                <rect width={colW[1]} height={H0} rx="6" /><text x="10" y="20"><tspan className="b">{a}</tspan> · {trunc(skillName(kb, a), 23)} ({person.skillsNow[a]}/5)</text>
+                <rect width={colW[1]} height={H0} rx="6" />
+                <text x="10" y="22"><tspan className="b">{a}</tspan> · {trunc(skillName(kb, a), 34)} ({person.skillsNow[a]}/5)</text>
               </g>
             ))}
             {profs.map((p, i) => (
@@ -257,18 +308,18 @@ export function L3({ out, kb, person, sel, setSel }) {
                 onKeyDown={(e) => { if (e.key === 'Enter') setSel(p.profile); }}>
                 <title>{repMajor(kb, p.profile, env).name}</title>
                 <rect width={colW[2]} height={44} rx="6" />
-                <text x="10" y="18" className="b">{trunc(repMajor(kb, p.profile, env).name, 24)}</text>
+                <text x="10" y="18" className="b">{trunc(repMajor(kb, p.profile, env).name, 26)}</text>
                 <text x="10" y="36" className="sub">{p.rank ? `${tr('hạng', 'rank')} ${p.rank} · ${pct(p.C)}` : tr('không xếp hạng', 'not ranked')} · {t(p.label)}</text>
               </g>
             ))}
             {mShow.map((m, i) => (
               <g key={m.id} className="fnode" transform={`translate(${colX[3]},${majY[i]})`}><title>{m.name_vi}</title>
-                <rect width={colW[3]} height={H0} rx="6" /><text x="10" y="20">{trunc(m.name_vi, 25)}</text></g>
+                <rect width={colW[3]} height={H0} rx="6" /><text x="10" y="22">{trunc(m.name_vi, 26)}</text></g>
             ))}
-            {majors.length > 5 && <g className="fnode dim" transform={`translate(${colX[3]},${majY[mShow.length]})`}><rect width={colW[3]} height={H0} rx="6" /><text x="10" y="20">+{majors.length - 5} {tr('ngành khác', 'more majors')}</text></g>}
+            {majors.length > 5 && <g className="fnode dim" transform={`translate(${colX[3]},${majY[mShow.length]})`}><rect width={colW[3]} height={H0} rx="6" /><text x="10" y="22">+{majors.length - 5} {tr('ngành khác', 'more majors')}</text></g>}
           </svg>
         </div>
-        <p className="small muted">{tr('Đường liền = con số của bạn trùng nét tính cách của nhóm ngành đang xem · đường đứt = không trùng · đường mờ = nối tới nhóm ngành khác.', 'Solid = your number matches a trait of the selected group · dashed = no match · faint = links to other groups.')}</p>
+        <p className="small muted">{tr('Đường đậm = con số của bạn trùng nét tính cách của nhóm ngành đang xem · rê chuột vào nét tính cách để làm nổi bật đường nối.', 'Bold line = your number matches the selected group · hover over a trait to highlight connected paths.')}</p>
         {row && <p className="small">{tr(`Nhóm ngành này gắn với 3 nét tính cách số ${row.A.join(', ')}. Bạn có con số trùng ở ${row.A.filter((a) => sigArch.has(a)).length} nét.`, `This group is linked to traits ${row.A.join(', ')}. Your numbers match ${row.A.filter((a) => sigArch.has(a)).length} of them.`)}</p>}
       </section>
       {row && (
@@ -370,26 +421,131 @@ export function L4({ out, kb, sel, setSel }) {
 export function L5({ out, kb, sel, setSel, compare }) {
   const { result, stability } = out;
   const [showAll, setShowAll] = useState(false);
+  const [searchQry, setSearchQry] = useState('');
+  const [filterLabel, setFilterLabel] = useState('');
+  const [filterEnv, setFilterEnv] = useState('');
+
   const env = result.env;
   const ranked = result.rows.filter((r) => r.rank).sort((a, b) => a.rank - b.rank);
   const rows = showAll ? [...ranked, ...result.rows.filter((r) => !r.rank)] : ranked;
+
+  const labelCounts = useMemo(() => {
+    const c = { [LABELS.PRIORITY]: 0, [LABELS.CONSIDER]: 0, [LABELS.CHALLENGE]: 0, [LABELS.NONE]: 0 };
+    rows.forEach((r) => { if (c[r.label] !== undefined) c[r.label]++; });
+    return c;
+  }, [rows]);
+
+  const filteredRows = useMemo(() => {
+    return rows.filter((r) => {
+      if (filterLabel && r.label !== filterLabel) return false;
+      if (filterEnv && r.env !== filterEnv) return false;
+      if (searchQry) {
+        const m = repMajor(kb, r.profile, env);
+        const q = searchQry.trim().toLowerCase();
+        const matchName = m.name.toLowerCase().includes(q);
+        const matchAll = m.all.some((major) => major.name_vi.toLowerCase().includes(q));
+        if (!matchName && !matchAll) return false;
+      }
+      return true;
+    });
+  }, [rows, filterLabel, filterEnv, searchQry, kb, env]);
+
   const sweep = useMemo(() => alphaSweep(result), [result]);
   const n = result.normalize;
   const top1 = stability.runs[0].top1;
+
   return (
     <>
       <p className="howto"><b>{tr('Cách đọc bảng', 'How to read this')}:</b> {tr(`hệ thống chấm cả 35 nhóm ngành. % phù hợp càng cao càng hợp với bạn (chỉ so sánh giữa các ngành của chính bạn). "Con số trùng" là số con số của bạn khớp nét tính cách của nhóm ngành; "Kỹ năng" là điểm trung bình bạn tự chấm cho các kỹ năng liên quan (cần từ ${fmt(SKILL_NEED(kb), 1)}/5). Nhóm không có con số trùng thì không được xếp hạng.`, `all 35 major groups are scored. Higher fit % = better for you (only compared within your own results). "Matching numbers" counts your numbers that match the group's traits; "Skills" is your average self-rating of the related skills (bar: ${fmt(SKILL_NEED(kb), 1)}/5). Groups with no match are not ranked.`)}</p>
       <section className="panel">
-        <div className="panel-head"><h2>{tr('Bảng xếp hạng nhóm ngành', 'Major-group ranking')}</h2>
-          {result.rows.length > ranked.length && <button type="button" className="btn ghost small" onClick={() => setShowAll((x) => !x)}>{showAll ? tr('chỉ nhóm được xếp hạng', 'ranked groups only') : tr(`hiện cả ${result.rows.length - ranked.length} nhóm không xếp hạng`, `show the ${result.rows.length - ranked.length} unranked groups`)}</button>}</div>
+        <div className="panel-head">
+          <h2>{tr('Bảng xếp hạng 35 nhóm ngành', '35 Major-group ranking')}</h2>
+          {result.rows.length > ranked.length && (
+            <button type="button" className="btn ghost small" onClick={() => setShowAll((x) => !x)}>
+              {showAll ? tr('chỉ nhóm được xếp hạng', 'ranked groups only') : tr(`hiện cả ${result.rows.length - ranked.length} nhóm không xếp hạng`, `show the ${result.rows.length - ranked.length} unranked groups`)}
+            </button>
+          )}
+        </div>
+
+        {/* Thanh công cụ tìm kiếm và lọc */}
+        <div className="l5-filter-bar">
+          <input
+            type="search"
+            className="l5-search"
+            placeholder={tr('🔍 Tìm nhanh tên ngành trong 35 nhóm…', '🔍 Search major name…')}
+            value={searchQry}
+            onChange={(e) => setSearchQry(e.target.value)}
+          />
+
+          <div className="l5-pills">
+            <button
+              type="button"
+              className={`pill-btn ${filterLabel === '' ? 'active' : ''}`}
+              onClick={() => setFilterLabel('')}
+            >
+              {tr('Tất cả', 'All')} ({rows.length})
+            </button>
+            <button
+              type="button"
+              className={`pill-btn priority ${filterLabel === LABELS.PRIORITY ? 'active' : ''}`}
+              onClick={() => setFilterLabel(filterLabel === LABELS.PRIORITY ? '' : LABELS.PRIORITY)}
+            >
+              ★ {t(LABELS.PRIORITY)} ({labelCounts[LABELS.PRIORITY] ?? 0})
+            </button>
+            <button
+              type="button"
+              className={`pill-btn consider ${filterLabel === LABELS.CONSIDER ? 'active' : ''}`}
+              onClick={() => setFilterLabel(filterLabel === LABELS.CONSIDER ? '' : LABELS.CONSIDER)}
+            >
+              ◯ {t(LABELS.CONSIDER)} ({labelCounts[LABELS.CONSIDER] ?? 0})
+            </button>
+            <button
+              type="button"
+              className={`pill-btn challenge ${filterLabel === LABELS.CHALLENGE ? 'active' : ''}`}
+              onClick={() => setFilterLabel(filterLabel === LABELS.CHALLENGE ? '' : LABELS.CHALLENGE)}
+            >
+              ⚠ {t(LABELS.CHALLENGE)} ({labelCounts[LABELS.CHALLENGE] ?? 0})
+            </button>
+            {labelCounts[LABELS.NONE] > 0 && (
+              <button
+                type="button"
+                className={`pill-btn none ${filterLabel === LABELS.NONE ? 'active' : ''}`}
+                onClick={() => setFilterLabel(filterLabel === LABELS.NONE ? '' : LABELS.NONE)}
+              >
+                ✕ {t(LABELS.NONE)} ({labelCounts[LABELS.NONE] ?? 0})
+              </button>
+            )}
+          </div>
+
+          <select
+            className="l5-env-select"
+            value={filterEnv}
+            onChange={(e) => setFilterEnv(e.target.value)}
+            aria-label="Lọc theo môi trường làm việc"
+          >
+            <option value="">{tr('Mọi môi trường làm việc', 'All environments')}</option>
+            {Object.keys(kb.envs).map((e) => (
+              <option key={e} value={e}>{envName(kb, e)}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="small muted" style={{ margin: '4px 0 8px' }}>
+          {tr(`Hiển thị ${filteredRows.length} trên tổng số ${rows.length} nhóm ngành:`, `Showing ${filteredRows.length} of ${rows.length} major groups:`)}
+        </div>
+
         <div className="tbl-wrap"><table className="tbl rank-tbl">
-          <thead><tr><th className="r">{t('Hạng')}</th><th>{tr('Ngành đại diện', 'Representative major')}</th><th>{tr('% phù hợp', 'Fit %')}</th><th>{t('Nhãn')}</th><th className="r">{tr('Con số trùng', 'Matching numbers')}</th><th className="r">{t('Kỹ năng')}</th><th /></tr></thead>
-          <tbody>{rows.map((r) => {
+          <thead><tr><th className="r">{t('Hạng')}</th><th>{tr('Ngành đại diện & Nhóm ngành', 'Representative major')}</th><th>{tr('% phù hợp', 'Fit %')}</th><th>{t('Nhãn')}</th><th className="r">{tr('Con số trùng', 'Matching numbers')}</th><th className="r">{t('Kỹ năng')}</th><th /></tr></thead>
+          <tbody>{filteredRows.length > 0 ? filteredRows.map((r) => {
             const m = repMajor(kb, r.profile, env);
             return (
               <tr key={r.profile} className={r.profile === sel ? 'hl' : r.EC === 0 ? 'dim' : ''} onClick={() => setSel(r.profile)} style={{ cursor: 'pointer' }}>
                 <td className="r">{r.rank ?? '—'}</td>
-                <td>{m.name}{m.more > 0 && <span className="muted small"> +{m.more}</span>}</td>
+                <td>
+                  <b>{m.name}</b>
+                  {m.more > 0 && <span className="muted small"> +{m.more} {tr('ngành khác', 'others')}</span>}
+                  <div className="small muted">{envName(kb, r.env)}</div>
+                </td>
                 <td><span className="pct-cell"><span className="mrow-bar"><span style={{ width: `${(r.EC >= 1 ? r.C : 0) * 100}%` }} /></span><b className="num">{r.EC >= 1 ? pct(r.C) : '—'}</b></span></td>
                 <td><LabelChip label={r.label} /></td>
                 <td className="r">{r.EC}/{result.groups.length}</td>
@@ -397,7 +553,9 @@ export function L5({ out, kb, sel, setSel, compare }) {
                 <td><a href={layerHref('l1', r.profile)} onClick={(e) => e.stopPropagation()}>{t('Vì sao?')}</a></td>
               </tr>
             );
-          })}</tbody>
+          }) : (
+            <tr><td colSpan={7} className="empty">{tr('Không tìm thấy ngành nào phù hợp với bộ lọc.', 'No majors match the filter.')}</td></tr>
+          )}</tbody>
         </table></div>
       </section>
       <div className="grid2" style={{ marginTop: 12 }}>
@@ -497,23 +655,23 @@ export function L6({ out, kb }) {
           <div>
             <h3>{t('Quy tắc tính đã dùng')}</h3>
             <table className="tbl"><thead><tr><th>{t('Mã')}</th><th>{t('Quy tắc')}</th><th>{t('Trích dẫn')}</th></tr></thead>
-              <tbody>{d.rules.filter((r) => ruleCodes.includes(r.code)).map((r) => (
-                <tr key={r.code}><td>{r.code}</td><td>{r.indicator}<br /><span className="small muted">{r.pseudocode}</span><br /><Src>{r.src_ref}</Src></td>
-                  <td className="small">{cite('calc_rule', r.code).map((c) => <div key={c.source_code}>{c.author ?? c.source_code} – <i>{c.title}</i></div>)}</td></tr>
-              ))}</tbody></table>
+            <tbody>{d.rules.filter((r) => ruleCodes.includes(r.code)).map((r) => (
+              <tr key={r.code}><td>{r.code}</td><td>{r.indicator}<br /><span className="small muted">{r.pseudocode}</span><br /><Src>{r.src_ref}</Src></td>
+                <td className="small">{cite('calc_rule', r.code).map((c) => <div key={c.source_code}>{c.author ?? c.source_code} – <i>{c.title}</i></div>)}</td></tr>
+            ))}</tbody></table>
           </div>
           <div>
             <h3>{t('Trọng số persona & bằng chứng')}</h3>
             <table className="tbl"><thead><tr><th>{t('Bộ')}</th><th>Persona</th><th className="r">α</th><th className="r">β</th><th className="r">γ</th><th>{t('Căn cứ')}</th></tr></thead>
-              <tbody>{kb.weightMeta.map((w) => (
-                <tr key={w.set_code + w.persona} className={w.set_code === kb.paramSet.code ? '' : 'dim'}><td>{w.set_code}</td><td>{w.persona}</td>
-                  <td className="r">{fmt(w.alpha)}</td><td className="r">{fmt(w.beta)}</td><td className="r">{fmt(w.gamma)}</td><td className="small">{w.criteria_rank ? `${w.criteria_rank} · ` : ''}{w.evidence}</td></tr>
-              ))}</tbody></table>
+            <tbody>{kb.weightMeta.map((w) => (
+              <tr key={w.set_code + w.persona} className={w.set_code === kb.paramSet.code ? '' : 'dim'}><td>{w.set_code}</td><td>{w.persona}</td>
+                <td className="r">{fmt(w.alpha)}</td><td className="r">{fmt(w.beta)}</td><td className="r">{fmt(w.gamma)}</td><td className="small">{w.criteria_rank ? `${w.criteria_rank} · ` : ''}{w.evidence}</td></tr>
+            ))}</tbody></table>
           </div>
           <div>
             <h3>{t('Công thức (F-*)')}</h3>
             <table className="tbl"><thead><tr><th>{t('Mã')}</th><th>{t('Tầng')}</th><th>{t('Công thức')}</th></tr></thead>
-              <tbody>{d.formulas.map((f) => <tr key={f.code}><td>{f.code}</td><td>{f.layer}</td><td>{f.name_vi}: <span className="small">{f.expr}</span><br /><Src>{f.src_ref}</Src></td></tr>)}</tbody></table>
+            <tbody>{d.formulas.map((f) => <tr key={f.code}><td>{f.code}</td><td>{f.layer}</td><td>{f.name_vi}: <span className="small">{f.expr}</span><br /><Src>{f.src_ref}</Src></td></tr>)}</tbody></table>
           </div>
           <div>
             <div className="panel-head"><h3>{tr('Thuật ngữ', 'Glossary')} ({d.glossary.length})</h3>
