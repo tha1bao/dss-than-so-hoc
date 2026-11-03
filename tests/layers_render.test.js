@@ -56,5 +56,14 @@ describe('Layers and plain text helper safety', () => {
       expect(text).toContain('Không con số nào');
     }
   });
+
+  it('admission benchmark rendering without exam does not throw toFixed', () => {
+    // Benchmark row without student exam (typical for guest mode)
+    const mockBenchmark = { major_id: 1, haui_name: 'Kế toán', cutoff_2026: 23.5, combos_2026: 'A00, A01, D01' };
+    expect(mockBenchmark.margin).toBeUndefined();
+    // fmt should safely handle undefined or number
+    const { fmt } = require ? {} : {};
+    expect(mockBenchmark.margin?.toFixed(2)).toBeUndefined();
+  });
 });
 

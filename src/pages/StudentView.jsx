@@ -127,6 +127,10 @@ export default function StudentView({ source, user, layer, sel: selParam, go }) 
             className="target-nav-pill"
             aria-current={layer !== 'l0' && sel === (targetMajor.profile_id ?? targetMajor.profile) ? 'page' : undefined}
             title={tr(`Xem chi tiết cho ngành mong muốn: ${targetMajor.name_vi}`, `Details for target major: ${targetMajor.name_vi}`)}
+            onClick={(e) => {
+              e.preventDefault();
+              goLayer('l1', targetMajor.profile_id ?? targetMajor.profile);
+            }}
           >
             🎯 {tr('Ngành mong muốn', 'Target major')}: <b>{targetMajor.name_vi}</b>
           </a>

@@ -17,7 +17,7 @@ function WhyBtn({ onClick }) {
 }
 
 /** Ngăn kéo giải thích nhanh (Drawer) – không bị văng trang khi bấm "Vì sao?" */
-function WhyDrawer({ out, kb, profile, base0, onClose, onSwitchProfile }) {
+function WhyDrawer({ out, kb, profile, base0, onClose, onSwitchProfile, onGo }) {
   const { result, target } = out;
   const row = result.rows.find((r) => r.profile === profile) ?? result.top[0];
   if (!row) return null;
@@ -26,6 +26,16 @@ function WhyDrawer({ out, kb, profile, base0, onClose, onSwitchProfile }) {
   const step = nextStepPlain(row, result, kb);
   const targetMajor = target?.major;
   const targetProfile = targetMajor ? (targetMajor.profile_id ?? targetMajor.profile) : null;
+
+  const handleOpenFull = (e) => {
+    e.preventDefault();
+    onClose();
+    if (onGo) {
+      onGo('l1', row.profile);
+    } else {
+      window.location.hash = `${base0}/l1?p=${row.profile}`;
+    }
+  };
 
   return (
     <div className="drawer-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-label="Giải thích vì sao">
@@ -95,7 +105,7 @@ function WhyDrawer({ out, kb, profile, base0, onClose, onSwitchProfile }) {
               href={`#${base0}/l1?p=${row.profile}`}
               className="btn small primary"
               style={{ textAlign: 'center', textDecoration: 'none' }}
-              onClick={onClose}
+              onClick={handleOpenFull}
             >
               {tr('Mở toàn màn hình xem chi tiết (Tab L1–L7) ↗', 'Open full detailed view (Tab L1–L7) ↗')}
             </a>
@@ -179,6 +189,7 @@ export function OtherMajors({ out, base, kb, base0, onOpenWhy, onGo, onSetTarget
   const tg = target?.analysis?.row;
   const step = tg && nextStepPlain(tg, result, kb);
   const top1MajorName = repMajor(kb, result.top[0]?.profile, env).name;
+  const admDetail = out.kpis?.find((k) => k.code === 'K_ADMIT')?.detail;
 
   return (
     <>
@@ -222,6 +233,12 @@ export function OtherMajors({ out, base, kb, base0, onOpenWhy, onGo, onSetTarget
                 href={`#${base0}/l1?p=${target.major.profile_id ?? target.major.profile}`}
                 className="btn small primary"
                 style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                onClick={(e) => {
+                  if (onGo) {
+                    e.preventDefault();
+                    onGo('l1', target.major.profile_id ?? target.major.profile);
+                  }
+                }}
               >
                 🎯 {tr(`Xem chi tiết chuyên ngành mong muốn (${target.major.name_vi}) →`, `View details for target major (${target.major.name_vi}) →`)}
               </a>
@@ -236,7 +253,16 @@ export function OtherMajors({ out, base, kb, base0, onOpenWhy, onGo, onSetTarget
           <div className="adm-box-inline">
             <span className="small">
               {tr('Khảo sát điểm chuẩn 2026 (HaUI):', '2026 Admission benchmark (HaUI):')}{' '}
-              <b>{t(target.benchmark.level)}</b> (Tổ hợp {target.benchmark.combo}: {target.benchmark.score}đ vs {target.benchmark.cutoff}đ, {target.benchmark.margin >= 0 ? `dư +${target.benchmark.margin.toFixed(2)}` : `thiếu ${target.benchmark.margin.toFixed(2)}`}đ)
+              {admDetail ? (
+                <>
+                  <b>{t(admDetail.level)}</b> ({tr('Tổ hợp', 'Combo')} {admDetail.combo}: {fmt(admDetail.score, 2)}đ vs {fmt(admDetail.cutoff, 2)}đ, {admDetail.margin >= 0 ? `dư +${fmt(admDetail.margin, 2)}` : `thiếu ${fmt(admDetail.margin, 2)}`}đ)
+                </>
+              ) : (
+                <>
+                  <b>{target.benchmark.cutoff_2026 ? `${fmt(target.benchmark.cutoff_2026, 2)}đ` : '—'}</b> ({tr('Tổ hợp', 'Combos')}: {target.benchmark.combos_2026 ?? '—'})
+                  <span className="muted"> · {tr('Nhập điểm thi ở form tự nhập để so sánh khả năng đỗ', 'Enter practice exam scores in form to see admission chance')}</span>
+                </>
+              )}
             </span>
           </div>
         )}
@@ -266,7 +292,7 @@ function Indicators({ out, kb, onGo, onSetTarget }) {
   const top1Adm = useMemo(() => (top1Bench && out.exam ? admissionChance(top1Bench, out.exam) : null), [top1Bench, out.exam]);
 
   let admDisplay;
-  if (adm?.value) {
+  if (adm?.detail) {
     admDisplay = {
       level: adm.level,
       val: t(adm.value),
@@ -352,6 +378,7 @@ export default function Dashboard({ out, base, kb, onGo, whatif, base0 = '' }) {
           base0={base0}
           onClose={() => setDrawerProfile(null)}
           onSwitchProfile={(p) => setDrawerProfile(p)}
+          onGo={onGo}
         />
       )}
     </div>
