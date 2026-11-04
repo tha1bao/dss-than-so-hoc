@@ -395,18 +395,166 @@ export function L3({ out, kb, person, sel, setSel }) {
 }
 
 // ---------------- L4 Công thức (kiểu LaTeX + số thật) ----------------
-function Step({ no, title, say, general, real, note, src }) {
+function Step({ no, title, say, symbols, general, real, note, src }) {
   return (
     <div className="step">
-      <h3>{tr('Bước', 'Step')} {no} · {title}</h3>
-      {say && <p className="small muted">{say}</p>}
-      {general && <Tex>{general}</Tex>}
-      {real && <Tex className="real">{real}</Tex>}
+      <div className="step-head">
+        <h3>{tr('Bước', 'Step')} {no} · {title}</h3>
+        {src && <Src>{src}</Src>}
+      </div>
+      {say && <p className="step-say">{say}</p>}
+      {symbols && symbols.length > 0 && (
+        <div className="step-symbols">
+          <span className="step-symbols-label">{tr('Ký hiệu trong bước này:', 'Symbols in this step:')}</span>
+          <ul className="step-symbols-list">
+            {symbols.map(([sym, exp, val]) => (
+              <li key={sym}>
+                <code>{sym}</code>: {exp}{val !== undefined && <> → <b>{val}</b></>}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {general && (
+        <div className="step-formula-box">
+          <span className="formula-tag">{tr('Công thức tổng quát', 'General formula')}</span>
+          <Tex>{general}</Tex>
+        </div>
+      )}
+      {real && (
+        <div className="step-formula-box real-box">
+          <span className="formula-tag real-tag">{tr('Thay số thực tế của bạn', 'With your actual numbers')}</span>
+          <Tex className="real">{real}</Tex>
+        </div>
+      )}
       {note && <p className="small real-note">{note}</p>}
-      <Src>{src}</Src>
     </div>
   );
 }
+
+function SymbolLegend({ r, row, kb }) {
+  const [open, setOpen] = useState(true);
+  const [a, b, c] = r.weights;
+  return (
+    <div className="symbol-decoder-panel">
+      <button
+        type="button"
+        className="symbol-decoder-toggle"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+      >
+        <span>
+          <b>{tr('📖 Bảng giải mã các ký hiệu trong công thức', '📖 Formula Symbols & Notation Guide')}</b>
+          <span className="small muted" style={{ marginLeft: 8 }}>
+            {tr('(Nhấn để đóng/mở giải thích ký hiệu)', '(Click to toggle symbol explanations)')}
+          </span>
+        </span>
+        <span className="toggle-icon">{open ? '▲' : '▼'}</span>
+      </button>
+
+      {open && (
+        <div className="symbol-decoder-content">
+          <p className="small muted" style={{ margin: '0 0 10px' }}>
+            {tr(
+              'Để tính % phù hợp, hệ thống kết hợp 3 trụ cột: Thần số học (NF) + Kỹ năng (SR) + Môi trường (ENV). Dưới đây là ý nghĩa và vai trò của từng ký hiệu:',
+              'To compute the fit %, the system combines 3 pillars: Numerology (NF) + Skills (SR) + Environment (ENV). Below is what each symbol means and its role:'
+            )}
+          </p>
+
+          <div className="symbol-grid">
+            <div className="symbol-item">
+              <div className="symbol-badge">C</div>
+              <div className="symbol-desc">
+                <b>{tr('Điểm % phù hợp tổng hợp (Composite Score)', 'Composite Fit Score')}</b>
+                <p className="small muted">
+                  {tr('Điểm số sau cùng quyết định mức độ phù hợp và thứ hạng của ngành (sau khi nhân trọng số và chuẩn hóa).', 'The final score determining fit % and rank (after weighting and scaling).')}
+                </p>
+                <span className="symbol-val">{tr('Của bạn', 'Your value')}: <b>{row.EC >= 1 ? `${Math.round(row.C * 100)}%` : tr('Chưa xếp hạng', 'Unranked')}</b></span>
+              </div>
+            </div>
+
+            <div className="symbol-item">
+              <div className="symbol-badge">NF / NF*</div>
+              <div className="symbol-desc">
+                <b>{tr('Độ trùng khớp Thần số học (Numerology Fit)', 'Numerology Fit Score')}</b>
+                <p className="small muted">
+                  {tr('Đo lường mức độ tương hợp giữa 5 con số của bạn với 3 nét tính cách của ngành.', 'Measures compatibility between your 5 numbers and the major group\'s 3 traits.')}
+                </p>
+                <span className="symbol-val">{tr('Của bạn', 'Your value')}: <b>NF = {fmt(row.NF)}{row.NF_n !== undefined && ` → NF* = ${fmt(row.NF_n)}`}</b></span>
+              </div>
+            </div>
+
+            <div className="symbol-item">
+              <div className="symbol-badge">SR / SR*</div>
+              <div className="symbol-desc">
+                <b>{tr('Độ sẵn sàng kỹ năng (Skill Readiness)', 'Skill Readiness Score')}</b>
+                <p className="small muted">
+                  {tr('Điểm tự đánh giá 3 kỹ năng cốt lõi của ngành, quy đổi từ thang 1–5 về thang chuẩn 0–1.', 'Self-rating of the 3 linked skills, scaled from 1–5 to standard 0–1.')}
+                </p>
+                <span className="symbol-val">{tr('Của bạn', 'Your value')}: <b>SR = {fmt(row.SR)}{row.SR_n !== undefined && ` → SR* = ${fmt(row.SR_n)}`}</b></span>
+              </div>
+            </div>
+
+            <div className="symbol-item">
+              <div className="symbol-badge">ENV / ENV*</div>
+              <div className="symbol-desc">
+                <b>{tr('Môi trường làm việc (Environment)', 'Working Environment')}</b>
+                <p className="small muted">
+                  {tr('Bằng 1 nếu môi trường bạn mong muốn trùng với môi trường của ngành; bằng 0 nếu khác.', '1 if your preferred environment matches the group\'s; 0 otherwise.')}
+                </p>
+                <span className="symbol-val">{tr('Của bạn', 'Your value')}: <b>ENV = {row.ENV}</b></span>
+              </div>
+            </div>
+
+            <div className="symbol-item">
+              <div className="symbol-badge">EC</div>
+              <div className="symbol-desc">
+                <b>{tr('Số lượng con số hội tụ (Eligible Count)', 'Eligible Number Matches')}</b>
+                <p className="small muted">
+                  {tr('Đếm xem bạn có bao nhiêu con số trùng với ngành. Cần EC ≥ 1 để được xếp hạng, EC ≥ 2 để đạt "Ưu tiên".', 'Counts how many numbers match the traits. Needs EC ≥ 1 to be ranked, EC ≥ 2 for "Priority".')}
+                </p>
+                <span className="symbol-val">{tr('Của bạn', 'Your value')}: <b>{row.EC}/5 {tr('con số trùng', 'matching numbers')}</b></span>
+              </div>
+            </div>
+
+            <div className="symbol-item">
+              <div className="symbol-badge">α, β, γ</div>
+              <div className="symbol-desc">
+                <b>{tr('Trọng số góc nhìn (Alpha, Beta, Gamma)', 'Persona ROC Weights')}</b>
+                <p className="small muted">
+                  {tr(`Tỷ lệ coi trọng giữa Thần số học (α), Kỹ năng (β), Môi trường (γ) theo góc nhìn ${PERSONA_NAME[r.persona]}.`, `Weighting between Numerology (α), Skills (β), Environment (γ) for ${PERSONA_NAME[r.persona]}.`)}
+                </p>
+                <span className="symbol-val">α = <b>{fmt(a)}</b> · β = <b>{fmt(b)}</b> · γ = <b>{fmt(c)}</b></span>
+              </div>
+            </div>
+
+            <div className="symbol-item">
+              <div className="symbol-badge">w_g</div>
+              <div className="symbol-desc">
+                <b>{tr('Trọng số từng con số (Group Weights)', 'Number Weights')}</b>
+                <p className="small muted">
+                  {tr('Độ quan trọng: G1 Số chủ đạo (35%), G5 Tên đầy đủ (25%), G6 Kabala (15%), G4 Thứ sinh (15%), G2 Ngày sinh (10%).', 'Weights: G1 Ruling (35%), G5 Full Name (25%), G6 Kabbalah (15%), G4 Weekday (15%), G2 Day (10%).')}
+                </p>
+              </div>
+            </div>
+
+            <div className="symbol-item">
+              <div className="symbol-badge">p_k & r_k</div>
+              <div className="symbol-desc">
+                <b>{tr('Thứ tự nét tính cách (p) & Điểm tự chấm (r)', 'Trait Order (p) & Self-Rating (r)')}</b>
+                <p className="small muted">
+                  {tr('p = [1,0; 0,8; 0,6] theo 3 vị trí nét tính cách. r = điểm tự chấm (1–5) của 3 kỹ năng tương ứng.', 'p = [1.0, 0.8, 0.6] by trait position. r = self-ratings (1–5) for the 3 skills.')}
+                </p>
+                <span className="symbol-val">r = [<b>{row.KN.join(', ')}</b>] / 5</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function L4({ out, kb, sel, setSel }) {
   const [l6] = useLayer('l6');
   const { result: r } = out;
@@ -428,40 +576,152 @@ export function L4({ out, kb, sel, setSel }) {
   return (
     <section className="panel">
       <Head out={out} kb={kb} row={row} setSel={setSel} />
+      <SymbolLegend r={r} row={row} kb={kb} />
       <div className="steps">
-        <Step no={++no} title={tr('Con số nào trùng?', 'Which numbers match?')} src={src('F-KHOP')}
-          say={tr('Mỗi nhóm ngành có 3 nét tính cách xếp theo thứ tự. Con số của bạn trùng nét ở vị trí 1, 2, 3 được 1; 0,8; 0,6 điểm.', 'Each group has 3 ordered traits. A number matching trait 1, 2, 3 earns 1, 0.8, 0.6.')}
-          general={`\\text{khớp}_g=\\begin{cases}p_k & ${tt(tr('con số g trùng nét thứ k', 'number g matches trait k'))}\\\\ 0 & ${tt(tr('ngược lại', 'otherwise'))}\\end{cases}\\qquad EC=\\#\\{g:\\ \\text{khớp}_g>0\\}`}
-          real={hits.length ? `${hits.map((g) => `\\text{khớp}_{\\text{${g}}}=${tn(row.khop[g], 1)}`).join(',\\ ')}\\ \\Rightarrow\\ EC=${row.EC}` : 'EC=0'} />
-        <Step no={++no} title={tr('Độ trùng con số', 'Number match score')} src={src('F-NF')}
-          say={tr('Cộng điểm trùng theo trọng số của từng con số, rồi chia cho điểm tối đa có thể.', 'Add the match points weighted by each number, divided by the maximum possible.')}
+        <Step
+          no={++no}
+          title={tr('Con số nào trùng? (Độ khớp từng con số)', 'Which numbers match?')}
+          src={src('F-KHOP')}
+          say={tr(
+            'Mỗi nhóm ngành có 3 nét tính cách xếp theo thứ tự ưu tiên 1, 2, 3. Con số của bạn nếu trùng nét ở vị trí nào sẽ nhận điểm thưởng vị trí tương ứng: vị trí 1 nhận 1,0 điểm; vị trí 2 nhận 0,8 điểm; vị trí 3 nhận 0,6 điểm.',
+            'Each major group has 3 ordered traits. A number matching trait 1, 2, 3 earns position points 1.0, 0.8, 0.6 respectively.'
+          )}
+          symbols={[
+            ['g', tr('Mã con số thần số học (G1..G6: Số chủ đạo, ngày sinh, thứ sinh, họ tên)', 'Signal number code')],
+            ['k', tr('Vị trí nét tính cách của ngành (k = 1, 2 hoặc 3)', 'Trait position index (k = 1, 2, 3)')],
+            ['p_k', tr('Điểm thưởng theo vị trí: p1 = 1,0 (nét chính), p2 = 0,8 (nét phụ), p3 = 0,6 (nét bổ trợ)', 'Trait position points: p1 = 1.0, p2 = 0.8, p3 = 0.6')],
+            ['\\text{khớp}_g', tr('Điểm trùng của con số g: nhận pk nếu trùng nét thứ k, bằng 0 nếu không trùng', 'Match points for number g (= pk if matches, 0 otherwise)')],
+            ['EC', tr('Eligible Count – Tổng số lượng con số của bạn có trùng khớp (cần EC ≥ 1 để xếp hạng, EC ≥ 2 để đạt Ưu tiên)', 'Eligible Count – total matching numbers (needs EC ≥ 1 to rank, EC ≥ 2 for Priority)'), `${row.EC}/5 con số`],
+          ]}
+          general={`\\text{khớp}_g=\\begin{cases}p_k & ${tt(tr('con số g trùng nét thứ k', 'number g matches trait k'))}\\\\ 0 & ${tt(tr('ngược lại (không trùng)', 'otherwise (no match)'))}\\end{cases}\\qquad EC=\\#\\{g:\\ \\text{khớp}_g>0\\}`}
+          real={hits.length ? `${hits.map((g) => `\\text{khớp}_{\\text{${g}}}=${tn(row.khop[g], 1)}`).join(',\\ ')}\\ \\Rightarrow\\ EC=${row.EC}` : 'EC=0\\ (không\\ có\\ con\\ số\\ nào\\ trùng)'}
+          note={row.EC >= 1 ? tr(`Bạn có ${row.EC} con số trùng khớp tính cách ngành (${hits.map((g) => `${g} ${groupName(kb, g)}`).join(', ')}).`, `You have ${row.EC} numbers matching the traits (${hits.map((g) => `${g} ${groupName(kb, g)}`).join(', ')}).`) : tr('Chưa có con số nào trùng khớp nét tính cách ngành này.', 'No numbers match this group\'s traits.')}
+        />
+        <Step
+          no={++no}
+          title={tr('Độ trùng con số Thần số học (NF - Numerology Fit)', 'Numerology Fit score (NF)')}
+          src={src('F-NF')}
+          say={tr(
+            'Tính tổng điểm trùng có nhân trọng số theo mức độ quan trọng của từng con số (w_g), sau đó chia cho điểm tối đa có thể đạt được (2,4 × tổng w) để chuẩn hóa điểm NF về thang đo từ 0 đến 1.',
+            'Sum weighted match points by number importance (w_g), divided by the maximum possible (2.4 × sum of w) to scale NF to 0–1.'
+          )}
+          symbols={[
+            ['NF', tr('Numerology Fit – Điểm tương thích con số thần số học (thang 0–1, càng cao càng hợp)', 'Numerology Fit score on 0–1 scale'), fmt(row.NF)],
+            ['w_g', tr('Trọng số con số: G1 Số chủ đạo (0,35), G5 Tên đầy đủ (0,25), G6 Kabala (0,15), G4 Thứ sinh (0,15), G2 Ngày sinh (0,10)', 'Number weights: G1 (0.35), G5 (0.25), G6 (0.15), G4 (0.15), G2 (0.10)')],
+            ['\\sum_g w_g', tr('Tổng trọng số các con số đang bật tính toán', 'Sum of active number weights'), tn(sw, 2)],
+            ['\\sum_k p_k', tr('Tổng điểm vị trí tối đa (1,0 + 0,8 + 0,6 = 2,4)', 'Sum of maximum position points'), tn(sp, 1)],
+          ]}
           general={'NF=\\dfrac{\\sum_g w_g\\cdot\\text{khớp}_g}{\\left(\\sum_g w_g\\right)\\cdot\\sum_k p_k}'}
-          real={`NF=\\dfrac{${hits.length ? hits.map((g) => `${tn(w[g], 2)}\\cdot ${tn(row.khop[g], 1)}`).join('+') : '0'}}{${tn(sw, 2)}\\cdot ${tn(sp, 1)}}=${tn(row.NF)}`} />
-        <Step no={++no} title={tr('Mức kỹ năng', 'Skill level')} src={src('F-SR')}
-          say={tr('Lấy điểm tự đánh giá (1–5) của 3 kỹ năng gắn với nhóm ngành, đổi về thang 0–1.', 'Take your 1–5 self-ratings of the 3 linked skills and scale them to 0–1.')}
+          real={`NF=\\dfrac{${hits.length ? hits.map((g) => `${tn(w[g], 2)}\\cdot ${tn(row.khop[g], 1)}`).join('+') : '0'}}{${tn(sw, 2)}\\cdot ${tn(sp, 1)}}=${tn(row.NF)}`}
+          note={tr(`Điểm Thần số học gốc: NF = ${fmt(row.NF)} (trên thang 0–1).`, `Raw Numerology score: NF = ${fmt(row.NF)} (on 0–1 scale).`)}
+        />
+        <Step
+          no={++no}
+          title={tr('Mức sẵn sàng kỹ năng (SR - Skill Readiness)', 'Skill readiness level (SR)')}
+          src={src('F-SR')}
+          say={tr(
+            'Lấy điểm tự đánh giá (thang 1–5) của 3 kỹ năng gắn liền với ngành. Công thức lấy (r_k - 1)/4 để quy đổi khoảng cách [1; 5] về thang đo chuẩn [0; 1] (1 điểm → 0; 3 điểm → 0,5; 5 điểm → 1,0), sau đó tính trung bình có trọng số p_k.',
+            'Take your 1–5 self-ratings of the 3 linked skills. (rk - 1)/4 scales [1; 5] to standard [0; 1] (1 → 0; 3 → 0.5; 5 → 1.0), then weighted by pk.'
+          )}
+          symbols={[
+            ['SR', tr('Skill Readiness – Mức độ sẵn sàng kỹ năng (thang 0–1)', 'Skill Readiness score on 0–1 scale'), fmt(row.SR)],
+            ['r_k', tr('Điểm tự đánh giá kỹ năng ở vị trí k (thang điểm từ 1 đến 5)', 'Self-rating score for skill k (1 to 5)'), `[${row.KN.join(', ')}]`],
+            ['p_k', tr('Trọng số vị trí của kỹ năng (1,0; 0,8; 0,6)', 'Skill position weight (1.0, 0.8, 0.6)')],
+            ['\\dfrac{r_k - 1}{4}', tr('Phép co dãn thang đo: trừ 1 chia 4 để đưa điểm 1..5 về khoảng 0..1', 'Scale adjustment: converts 1..5 range into 0..1')],
+          ]}
           general={'SR=\\dfrac{\\sum_{k=1}^{3}p_k\\,(r_k-1)}{4\\sum_k p_k}'}
-          real={`SR=\\dfrac{${row.KN.map((rk, i) => `${tn(p[i], 1)}\\cdot(${rk}-1)`).join('+')}}{4\\cdot ${tn(sp, 1)}}=${tn(row.SR)}`} />
-        <Step no={++no} title={tr('Môi trường', 'Environment')} src={src('F-ENV')}
-          say={tr('Bằng 1 nếu môi trường bạn muốn trùng môi trường của nhóm ngành, ngược lại bằng 0.', '1 if the environment you want matches the group, otherwise 0.')}
+          real={`SR=\\dfrac{${row.KN.map((rk, i) => `${tn(p[i], 1)}\\cdot(${rk}-1)`).join('+')}}{4\\cdot ${tn(sp, 1)}}=${tn(row.SR)}`}
+          note={tr(`Điểm kỹ năng tự đánh giá: SR = ${fmt(row.SR)} (tương đương trung bình ${fmt(avgSkill(row.SR), 1)}/5 sao; mức chuẩn cần là ≥ ${fmt(SKILL_NEED(kb), 1)}/5).`, `Skill score: SR = ${fmt(row.SR)} (avg ${fmt(avgSkill(row.SR), 1)}/5 stars; standard bar is ≥ ${fmt(SKILL_NEED(kb), 1)}/5).`)}
+        />
+        <Step
+          no={++no}
+          title={tr('Độ phù hợp môi trường làm việc (ENV - Environment)', 'Working environment match (ENV)')}
+          src={src('F-ENV')}
+          say={tr(
+            'Bằng 1 nếu môi trường bạn mong muốn trùng khớp với môi trường làm việc đặc trưng của nhóm ngành; bằng 0 nếu khác môi trường.',
+            '1 if your chosen environment matches the major group\'s environment; 0 otherwise.'
+          )}
+          symbols={[
+            ['ENV', tr('Điểm môi trường làm việc (chỉ nhận giá trị 1 hoặc 0)', 'Environment match score (1 or 0)'), row.ENV],
+            ['môi trường bạn chọn', tr('Môi trường do bạn lựa chọn khi làm bài khảo sát', 'Your chosen work environment'), envName(kb, r.env)],
+            ['môi trường nhóm ngành', tr('Môi trường làm việc đặc trưng của nhóm ngành', 'Major group typical work environment'), envName(kb, row.env)],
+          ]}
           general={`ENV=[\\,${tt(tr('môi trường bạn chọn', 'your environment'))}=${tt(tr('môi trường nhóm ngành', 'group environment'))}\\,]`}
-          real={`ENV=[\\,${tt(envName(kb, r.env))}=${tt(envName(kb, row.env))}\\,]=${row.ENV}`} />
+          real={`ENV=[\\,${tt(envName(kb, r.env))}=${tt(envName(kb, row.env))}\\,]=${row.ENV}`}
+          note={row.ENV === 1 ? tr('✓ Hoàn toàn trùng khớp môi trường bạn mong muốn.', '✓ Perfectly fits your preferred environment.') : tr('Khác môi trường bạn mong muốn (ENV = 0).', 'Differs from your preferred environment (ENV = 0).')}
+        />
         {norm && row.EC >= 1 && (
-          <Step no={++no} title={tr('Đưa về cùng thang', 'Put on the same scale')} src={src('F-MM')}
-            say={tr(`So với ${r.nEligible} nhóm ngành có con số trùng của chính bạn: thấp nhất = 0, cao nhất = 1.`, `Compared with your own ${r.nEligible} groups that have a match: lowest = 0, highest = 1.`)}
+          <Step
+            no={++no}
+            title={tr('Chuẩn hóa Min-Max về cùng thang đo (X*)', 'Put on the same scale (Min-Max normalization)')}
+            src={src('F-MM')}
+            say={tr(
+              `So sánh điểm của ngành này với ${r.nEligible} nhóm ngành có con số trùng của chính bạn: ngành thấp nhất nhận 0, ngành cao nhất nhận 1. Phép chuẩn hóa này giúp cả 3 trụ cột (Thần số học, Kỹ năng, Môi trường) có cùng thang đo 0..1 công bằng trước khi cộng có trọng số.`,
+              `Comparing against your ${r.nEligible} matching groups: lowest = 0, highest = 1. This ensures all 3 pillars (Numerology, Skills, Environment) share a fair 0..1 scale before weighted addition.`
+            )}
+            symbols={[
+              ['X*', tr('Điểm sau chuẩn hóa Min-Max (NF*, SR*, ENV*) nằm trong đoạn [0; 1]', 'Normalized score in [0; 1] range')],
+              ['X', tr('Điểm gốc ban đầu trước chuẩn hóa (NF, SR, ENV)', 'Original raw score (NF, SR, ENV)')],
+              ['\\min X, \\max X', tr('Điểm thấp nhất và cao nhất của chỉ số đó trong các ngành bạn có số trùng', 'Min and max values among your matching major groups')],
+            ]}
             general={'X^{*}=\\dfrac{X-\\min X}{\\max X-\\min X}'}
-            real={['NF', 'SR', 'ENV'].map(mm).join('\\qquad ')} />
+            real={['NF', 'SR', 'ENV'].map(mm).join('\\qquad ')}
+            note={tr(`Sau chuẩn hóa: NF* = ${fmt(row.NF_n)}, SR* = ${fmt(row.SR_n)}, ENV* = ${row.ENV_n}.`, `After scaling: NF* = ${fmt(row.NF_n)}, SR* = ${fmt(row.SR_n)}, ENV* = ${row.ENV_n}.`)}
+          />
         )}
-        <Step no={++no} title={tr('% phù hợp', 'Fit %')} src={src('F-C')}
-          say={tr(`Cộng 3 phần theo trọng số ROC của góc nhìn ${PERSONA_NAME[r.persona]}.`, `Add the 3 parts with the ROC weights of the ${PERSONA_NAME[r.persona]} view.`)}
+        <Step
+          no={++no}
+          title={tr('Điểm % phù hợp tổng hợp (C - Composite Score)', 'Composite fit percentage (C)')}
+          src={src('F-C')}
+          say={tr(
+            `Nhân từng trụ cột với trọng số ROC của góc nhìn ${PERSONA_NAME[r.persona]} rồi cộng lại. Điểm C quyết định tỷ lệ % phù hợp và thứ hạng xếp hạng của ngành.`,
+            `Multiply each scaled pillar by the ROC weights for ${PERSONA_NAME[r.persona]}, then sum. Score C determines the fit % and ranking.`
+          )}
+          symbols={[
+            ['C', tr('Composite Score – Điểm phù hợp tổng hợp (thể hiện % phù hợp trên giao diện)', 'Composite fit score determining percentage on UI'), `${Math.round(row.C * 100)}% (${fmt(row.C)})`],
+            ['\\alpha', tr(`Trọng số Thần số học (góc nhìn ${PERSONA_NAME[r.persona]})`, 'Weight for Numerology'), fmt(a)],
+            ['\\beta', tr(`Trọng số Kỹ năng (góc nhìn ${PERSONA_NAME[r.persona]})`, 'Weight for Skills'), fmt(b)],
+            ['\\gamma', tr(`Trọng số Môi trường (góc nhìn ${PERSONA_NAME[r.persona]})`, 'Weight for Environment'), fmt(c)],
+            ['NF*, SR*, ENV*', tr('Các yếu tố đã đưa về cùng thang đo 0..1', 'Normalized factors on 0..1 scale')],
+          ]}
           general={`C=\\alpha\\,${X('NF')}+\\beta\\,${X('SR')}+\\gamma\\,${X('ENV')}`}
-          real={row.EC >= 1 ? `C=${tn(a)}\\cdot ${tn(xv('NF'))}+${tn(b)}\\cdot ${tn(xv('SR'))}+${tn(c)}\\cdot ${tn(xv('ENV'))}=${tn(row.C)}\\;\\Rightarrow\\;${Math.round(row.C * 100)}\\%` : `EC=0\\ \\Rightarrow\\ ${tt(tr('không xếp hạng', 'not ranked'))}`} />
-        <Step no={++no} title={tr('Nhãn khuyến nghị', 'Recommendation label')} src={src('F-LABEL')}
+          real={row.EC >= 1 ? `C=${tn(a)}\\cdot ${tn(xv('NF'))}+${tn(b)}\\cdot ${tn(xv('SR'))}+${tn(c)}\\cdot ${tn(xv('ENV'))}=${tn(row.C)}\\;\\Rightarrow\\;${Math.round(row.C * 100)}\\%` : `EC=0\\ \\Rightarrow\\ ${tt(tr('không xếp hạng', 'not ranked'))}`}
+          note={row.EC >= 1 ? tr(`Kết quả: Nhóm ngành này đạt mức phù hợp ${Math.round(row.C * 100)}% (xếp hạng #${row.rank ?? '—'}).`, `Result: This major group achieves a fit of ${Math.round(row.C * 100)}% (Rank #${row.rank ?? '—'}).`) : tr('Không xếp hạng do không có con số thần số học nào trùng.', 'Unranked because no numerology numbers match.')}
+        />
+        <Step
+          no={++no}
+          title={tr('Quy tắc gán nhãn khuyến nghị (Ưu tiên / Cân nhắc / Thử thách)', 'Recommendation label rule')}
+          src={src('F-LABEL')}
+          say={tr(
+            'Hệ thống căn cứ vào 3 tiêu chuẩn: độ hội tụ con số (EC ≥ 2), mức độ thành thạo kỹ năng (SR ≥ 0,625) và kiểm tra không có kỹ năng yếu (≤ 2).',
+            'The system evaluates 3 criteria: number convergence (EC ≥ 2), skill readiness bar (SR ≥ 0.625), and absence of weak skills (≤ 2).'
+          )}
+          symbols={[
+            ['EC', tr('Số con số trùng: EC = 0 → Không đề xuất; EC ≥ 2 là điều kiện cần để lên Ưu tiên', 'Matching numbers count'), `${row.EC}`],
+            ['SR_{min}', tr(`Ngưỡng kỹ năng chuẩn: SR phải ≥ ${fmt(srMin)} (tương đương tự chấm trung bình ≥ 3,5/5)`, 'Skill threshold'), fmt(srMin)],
+            ['\\text{kỹ năng } \\le 2', tr('Cảnh báo kỹ năng yếu: nếu có kỹ năng ≤ 2 sẽ bị gán nhãn "Thử thách" để nhắc nhở', 'Weak skill warning'), `${row.weak} kỹ năng`],
+          ]}
           general={`${tt(tr('Nhãn', 'Label'))}=\\begin{cases}${tt(t('Không đề xuất'))} & EC=0\\\\ ${tt(t('Thử thách'))} & ${tt(tr('có kỹ năng', 'a skill'))}\\le 2\\\\ ${tt(t('Ưu tiên'))} & EC\\ge 2,\\ SR\\ge ${tn(srMin)}\\\\ ${tt(t('Cân nhắc'))} & ${tt(tr('còn lại', 'otherwise'))}\\end{cases}`}
-          note={`${tr('Bạn', 'You')}: EC = ${row.EC}, ${row.weak ? tr(`có ${row.weak} kỹ năng ≤ 2`, `${row.weak} skill(s) ≤ 2`) : tr('không có kỹ năng ≤ 2', 'no skill ≤ 2')}, SR = ${fmt(row.SR)} → ${t(row.label)}`} />
+          note={`${tr('Đối chiếu kết quả của bạn', 'Matching your results')}: EC = ${row.EC} (${row.EC >= 2 ? tr('đạt chuẩn hội tụ', 'converged') : tr('chưa đủ ≥ 2 con số', 'under 2 matches')}), ${row.weak ? tr(`có ${row.weak} kỹ năng ≤ 2 (cần bổ trợ)`, `has ${row.weak} skill(s) ≤ 2`) : tr('không có kỹ năng yếu', 'no weak skills')}, SR = ${fmt(row.SR)} (${row.SR >= srMin ? tr('đạt ngưỡng chuẩn', 'meets bar') : tr('dưới ngưỡng chuẩn', 'below bar')}) → ${t(row.label)}.`}
+        />
         {ta && row.label !== LABELS.PRIORITY && ta.status === 'POSSIBLE' && (
-          <Step no={++no} title={tr('Cần tăng bao nhiêu để lên Ưu tiên?', 'How much to reach Priority?')} src={src('F-STEP5a')}
+          <Step
+            no={++no}
+            title={tr('Lộ trình rèn luyện để nâng lên nhãn "Ưu tiên"', 'Improvement path to reach "Priority"')}
+            src={src('F-STEP5a')}
+            say={tr(
+              'Xác định số bậc kỹ năng cụ thể bạn cần cải thiện trong học tập và rèn luyện để đưa nhóm ngành này từ "Cân nhắc" lên mức "Ưu tiên".',
+              'Identifies the exact skill level increments needed to elevate this major group from "Consider" to "Priority".'
+            )}
+            symbols={[
+              ['bậc cần tăng', tr('Số bậc cần nâng ở các kỹ năng đang yếu (≤ 2) lên mức tối thiểu 3', 'Levels to raise weak skills to 3'), ta.stepsWeak],
+              ['điểm thiếu', tr('Khoảng cách điểm SR còn thiếu so với mức chuẩn 0,625', 'Missing SR gap to standard bar'), fmt(ta.gap, 2)],
+              ['kỹ năng chính', tr('Kỹ năng cốt lõi ở vị trí số 1 của ngành (mang lại hiệu quả tăng điểm cao nhất)', 'Primary skill in position 1'), skillName(kb, row.A[0])],
+            ]}
             general={`${tt(tr('bậc cần tăng', 'levels needed'))}=\\sum_{r_k\\le 2}(3-r_k)\\qquad ${tt(tr('điểm thiếu', 'missing points'))}=\\max\\!\\left(0;\\ ${tn(srMin)}\\cdot 4\\sum_k p_k-\\sum_k p_k(r_k-1)\\right)`}
-            real={`${tt(tr('bậc cần tăng', 'levels needed'))}=${ta.stepsWeak}\\qquad ${tt(tr('điểm thiếu', 'missing points'))}=${tn(ta.gap, 2)}\\ \\Rightarrow\\ ${ta.stepsMain}\\ ${tt(tr('bậc ở', 'level(s) on'))}\\ ${tt(skillName(kb, row.A[0]))}`} />
+            real={`${tt(tr('bậc cần tăng', 'levels needed'))}=${ta.stepsWeak}\\qquad ${tt(tr('điểm thiếu', 'missing points'))}=${tn(ta.gap, 2)}\\ \\Rightarrow\\ ${ta.stepsMain}\\ ${tt(tr('bậc ở', 'level(s) on'))}\\ ${tt(skillName(kb, row.A[0]))}`}
+            note={tr(`Chỉ cần rèn luyện thêm ${ta.stepsMain} bậc ở kỹ năng "${skillName(kb, row.A[0])}", nhóm ngành này sẽ lập tức đạt chuẩn nhãn "Ưu tiên".`, `Just increasing ${ta.stepsMain} level(s) on "${skillName(kb, row.A[0])}" will elevate this major group to "Priority".`)}
+          />
         )}
       </div>
       <p className="small muted">{tr('Ký hiệu: w = trọng số của từng con số · p = 1 / 0,8 / 0,6 theo vị trí · r = điểm kỹ năng tự chấm · α, β, γ = trọng số ROC.', 'Symbols: w = weight of each number · p = 1 / 0.8 / 0.6 by position · r = self-rated skill · α, β, γ = ROC weights.')}</p>
