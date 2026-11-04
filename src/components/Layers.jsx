@@ -202,8 +202,60 @@ export function L2({ out, kb, sel, setSel }) {
         <details className="panel teacher" open>
           <summary>{tr('Chỉ số tham khảo & Phân tích tâm lý học đường (không dùng để chấm)', 'Reference indicators & Growth areas (not used in scoring)')}</summary>
           <div className="teacher-body grid2">
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 44px)', gap: 3 }} aria-label={t('Biểu đồ ngày sinh 3×3')}>
-              {[3, 6, 9, 2, 5, 8, 1, 4, 7].map((k) => <div key={k} className="letter" style={{ height: 40 }}><b>{extras.birthChart[k] ? String(k).repeat(extras.birthChart[k]) : '·'}</b></div>)}
+            <div className="birth-chart-card">
+              <div className="birth-chart-head">
+                <div>
+                  <span className="eyebrow">{tr('Thần số học Pythagoras', 'Pythagorean Numerology')}</span>
+                  <h4 style={{ margin: '2px 0 0', fontSize: '0.96rem' }}>{tr('Ma trận ngày sinh (Biểu đồ 3×3)', 'Birth Chart Matrix (3×3 Grid)')}</h4>
+                </div>
+                {sig.input && (
+                  <span className="birth-date-badge">
+                    📅 {String(sig.input.day).padStart(2, '0')}/{String(sig.input.month).padStart(2, '0')}/{sig.input.year}
+                  </span>
+                )}
+              </div>
+
+              <div className="chart-matrix-wrapper">
+                <div className="chart-planes">
+                  <span className="plane-label">{tr('Trí não', 'Mind')}</span>
+                  <span className="plane-label">{tr('Tâm hồn', 'Soul')}</span>
+                  <span className="plane-label">{tr('Thể chất', 'Physical')}</span>
+                </div>
+                <div className="chart-grid-3x3" role="grid" aria-label={tr('Ma trận ngày sinh 3×3', 'Birth chart 3x3')}>
+                  {[3, 6, 9, 2, 5, 8, 1, 4, 7].map((k) => {
+                    const count = extras.birthChart[k] || 0;
+                    return (
+                      <div
+                        key={k}
+                        className={`chart-cell ${count > 0 ? 'cell-filled' : 'cell-empty'}`}
+                        title={count > 0 ? tr(`Số ${k}: xuất hiện ${count} lần trong ngày sinh`, `Number ${k}: appears ${count} time(s)`) : tr(`Vị trí số ${k} (trống trong ngày sinh)`, `Slot for number ${k} (empty)`)}
+                      >
+                        {count > 0 ? (
+                          <b className="cell-digits">{String(k).repeat(count)}</b>
+                        ) : (
+                          <span className="cell-ghost">({k})</span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="chart-legend-row">
+                <span className="small muted">
+                  <b>{tr('Cấu trúc 3 trục ngang:', '3 Horizontal Planes:')}</b> {tr('Hàng trên', 'Top')} 3-6-9 ({tr('Trí não', 'Mind')}) · {tr('Hàng giữa', 'Middle')} 2-5-8 ({tr('Tâm hồn', 'Soul')}) · {tr('Hàng dưới', 'Bottom')} 1-4-7 ({tr('Thể chất', 'Physical')}).
+                </span>
+              </div>
+
+              <div className="birth-chart-note">
+                <p className="small muted">
+                  <b>{tr('💡 Ghi chú về ma trận ngày sinh:', '💡 About the Birth Chart Matrix:')}</b>{' '}
+                  {tr(
+                    'Ma trận được lập bằng cách điền các chữ số xuất hiện trong ngày tháng năm sinh vào 9 vị trí cố định theo 3 tầng biểu đạt. Các hàng, cột hoặc đường chéo có đủ số (hoặc vắng mặt toàn bộ) sẽ hình thành nên các "Mũi tên tâm lý" (thế mạnh hoặc vùng rèn luyện) được phân tích chi tiết ở bảng bên cạnh.',
+                    'The matrix is populated by placing the digits from your birth date into 9 fixed positions across 3 planes. Complete lines or empty gaps form the "Psychological Arrows" (strengths or growth areas) analyzed in the adjacent table.'
+                  )}
+                </p>
+              </div>
             </div>
             <table className="tbl"><tbody>
               <tr><td>{tr('Số linh hồn', 'Soul Urge')}</td><td className="r">{sig.soulUrge}</td></tr>

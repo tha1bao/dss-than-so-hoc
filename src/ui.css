@@ -705,3 +705,105 @@ table.tbl { border-collapse: collapse; width: 100%; font-size: 0.82rem; }
 .target-nav-pill:hover {
   filter: brightness(1.1);
 }
+
+/* ---- Ma trận ngày sinh (Birth Chart Matrix 3x3) ---- */
+.birth-chart-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-s);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.birth-chart-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line-2);
+}
+.birth-date-badge {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--c-nf);
+  background: var(--surface-2);
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+}
+.chart-matrix-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 6px 0;
+}
+.chart-planes {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  height: 136px;
+}
+.plane-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--ink-3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-align: right;
+  line-height: 1;
+}
+.chart-grid-3x3 {
+  display: grid;
+  grid-template-columns: repeat(3, 46px);
+  grid-template-rows: repeat(3, 42px);
+  gap: 5px;
+}
+.chart-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+.chart-cell.cell-filled {
+  background: var(--surface-2);
+  border: 1.5px solid var(--c-sr);
+  color: var(--c-nf);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+.cell-digits {
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+.chart-cell.cell-empty {
+  background: transparent;
+  border: 1px dashed var(--line);
+  color: var(--ink-3);
+  opacity: 0.45;
+}
+.cell-ghost {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+.chart-legend-row {
+  line-height: 1.4;
+  font-size: 0.76rem;
+  padding: 0 2px;
+}
+.birth-chart-note {
+  background: var(--surface-2);
+  border-radius: 6px;
+  padding: 9px 12px;
+  border-left: 3px solid var(--c-sr);
+}
+.birth-chart-note p {
+  margin: 0;
+  line-height: 1.45;
+  font-size: 0.78rem;
+}
