@@ -4,10 +4,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { GROUPS, targetAnalysis, alphaSweep, computeExtras, LABELS } from '../../shared/engine/index.js';
 import { explainProfile } from '../../shared/engine/view.js';
 import { getLayer } from '../api.js';
-import { fmt, envName, groupName, skillName, PERSONA_NAME } from '../format.js';
+import { fmt, envName, groupName, skillName, PERSONA_NAME, archTrait } from '../format.js';
 import { LabelChip, Warnings, LabelDistribution } from './common.jsx';
 import { Tex, tn, tt } from './Tex.jsx';
-import { t, tr, num } from '../i18n.js';
+import { t, tr, num, getLang } from '../i18n.js';
+import { getMeaningVi } from '../data/number_meanings_vi.js';
 import { pct, repMajor, avgSkill, SKILL_NEED, labelPlain, nextStepPlain, STAB_NAME, stabWord, py00Chain, rootChain, chainText } from '../plain.js';
 
 const WEEKDAY_VI = ['', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy', 'Chủ nhật'];
@@ -205,7 +206,7 @@ export function L2({ out, kb, sel, setSel }) {
               {[3, 6, 9, 2, 5, 8, 1, 4, 7].map((k) => <div key={k} className="letter" style={{ height: 40 }}><b>{extras.birthChart[k] ? String(k).repeat(extras.birthChart[k]) : '·'}</b></div>)}
             </div>
             <table className="tbl"><tbody>
-              <tr><td>{tr('Số linh hồn (Soul Urge)', 'Soul Urge')}</td><td className="r">{sig.soulUrge}</td></tr>
+              <tr><td>{tr('Số linh hồn', 'Soul Urge')}</td><td className="r">{sig.soulUrge}</td></tr>
               <tr><td>{t('Số thiếu (PY03)')}</td><td>{extras.missing.join(', ') || tr('không', 'none')}</td></tr>
               <tr>
                 <td>{t('Mũi tên tâm lý (PY04)')}</td>
@@ -227,8 +228,8 @@ export function L2({ out, kb, sel, setSel }) {
                   </p>
                 </td>
               </tr>
-              <tr><td>Outer expression (PY06)</td><td className="r">{extras.outer}</td></tr>
-              <tr><td>Vedic: psychic / destiny / name</td><td className="r">{extras.vedic.psychicType} · {extras.vedic.destiny} · {extras.vedic.name}</td></tr>
+              <tr><td>{tr('Số thể hiện bên ngoài (PY06)', 'Outer expression (PY06)')}</td><td className="r">{extras.outer}</td></tr>
+              <tr><td>{tr('Vệ Đà: tâm hồn / định mệnh / danh tính', 'Vedic: psychic / destiny / name')}</td><td className="r">{extras.vedic.psychicType} · {extras.vedic.destiny} · {extras.vedic.name}</td></tr>
               <tr><td>{t('Kabala: khóa ngày sinh · hành tinh')}</td><td className="r">{extras.kabala.birthKey} · {extras.kabala.birthPlanet}</td></tr>
             </tbody></table>
           </div>
@@ -298,7 +299,7 @@ export function L3({ out, kb, person, sel, setSel }) {
                 onMouseEnter={() => setHoverArch(a)}
                 onMouseLeave={() => setHoverArch(null)}
               >
-                <title>{`${skillName(kb, a)} – ${kb.archetypes.find((x) => x.number === a)?.trait ?? ''}`}</title>
+                <title>{`${skillName(kb, a)} – ${archTrait(kb, a)}`}</title>
                 <rect width={colW[1]} height={H0} rx="6" />
                 <text x="10" y="22"><tspan className="b">{a}</tspan> · {trunc(skillName(kb, a), 34)} ({person.skillsNow[a]}/5)</text>
               </g>
@@ -325,7 +326,7 @@ export function L3({ out, kb, person, sel, setSel }) {
       {row && (
         <Teacher title={tr('bảng khớp chi tiết', 'detailed match table')}>
           <div className="tbl-wrap"><table className="tbl">
-            <thead><tr><th>{t('Vị trí')}</th><th>Archetype</th><th className="r">p</th><th>{t('Nhóm tín hiệu trùng')}</th><th>{t('Kỹ năng')}</th><th className="r">{t('Mức')}</th></tr></thead>
+            <thead><tr><th>{t('Vị trí')}</th><th>{tr('Nét tính cách', 'Archetype')}</th><th className="r">p</th><th>{t('Nhóm tín hiệu trùng')}</th><th>{t('Kỹ năng')}</th><th className="r">{t('Mức')}</th></tr></thead>
             <tbody>{row.A.map((a, i) => (
               <tr key={i} className={row.KN[i] <= kb.params.Weak_max ? 'hl' : ''}>
                 <td>{i + 1}</td><td>{a}</td><td className="r">{fmt(result.p[i], 1)}</td>
@@ -636,19 +637,23 @@ export function L6({ out, kb }) {
           {wanted.map(([sc, n, g]) => {
             const m = d.meanings.find((x) => x.school_code === sc && x.number === n);
             const cs = m ? cite('number_meaning', m.id) : [];
+            const vi = getMeaningVi(sc, n);
+            const isVi = getLang() === 'vi';
+            const meaningText = (isVi && vi?.meaning) || m?.meaning;
+            const vocationsText = (isVi && vi?.vocations) || m?.vocations;
             return (
               <div key={g} className="mean">
                 <span className="small muted">{sigName(g)} <b className="num">{n}</b></span>
-                {m ? <>
-                  <p>“{m.meaning}”</p>
-                  {m.vocations && <p className="small"><b>{tr('Nghề theo sách', 'Careers in the book')}:</b> {m.vocations}</p>}
-                  <span className="src">{tr('Nguồn', 'Source')}: {m.source_note}{cs.length ? ` · ${cs.map((c) => c.author ?? c.source_code).join('; ')}` : ''}</span>
+                {meaningText ? <>
+                  <p>“{meaningText}”</p>
+                  {vocationsText && <p className="small"><b>{tr('Nghề theo sách', 'Careers in the book')}:</b> {vocationsText}</p>}
+                  <span className="src">{tr('Nguồn', 'Source')}: {m?.source_note ?? ''}{cs.length ? ` · ${cs.map((c) => c.author ?? c.source_code).join('; ')}` : ''}</span>
                 </> : <p className="small muted">{t('chưa có trong bảng ý nghĩa')}</p>}
               </div>
             );
           })}
         </div>
-        <p className="small muted" style={{ marginTop: 8 }}>{tr('Trích nguyên văn từ sách để không làm sai nghĩa. Thần số học không có giá trị dự báo khoa học.', 'Quoted word for word from the books to avoid distortion. Numerology has no scientific predictive value.')}</p>
+        <p className="small muted" style={{ marginTop: 8 }}>{tr('Trích dẫn và lược dịch từ sách nguồn để tiện đối chiếu. Thần số học không có giá trị dự báo khoa học.', 'Quoted word for word from the books to avoid distortion. Numerology has no scientific predictive value.')}</p>
       </section>
       <Teacher title={tr('quy tắc, trọng số, công thức, thuật ngữ, tài liệu', 'rules, weights, formulas, glossary, sources')}>
         <div className="grid2">
@@ -707,7 +712,15 @@ export function L7({ out, kb, meta }) {
     return g;
   }, [d]);
   if (!d) return <Loading err={err} />;
-  const DOC_NAME = { model_card: 'Model Card', data_gap: 'Khoảng trống dữ liệu (Data_Gap)', data_dictionary: 'Từ điển dữ liệu', major_data_dictionary: 'Từ điển dữ liệu ngành', sensitivity_summary: 'Tóm tắt Sensitivity', change_log: 'Nhật ký thay đổi', member_contribution: 'Đóng góp thành viên' };
+  const DOC_NAME = {
+    model_card: tr('Thẻ mô hình (Model Card)', 'Model Card'),
+    data_gap: tr('Khoảng trống dữ liệu (Data Gap)', 'Data Gap'),
+    data_dictionary: tr('Từ điển dữ liệu', 'Data dictionary'),
+    major_data_dictionary: tr('Từ điển dữ liệu ngành', 'Major data dictionary'),
+    sensitivity_summary: tr('Tóm tắt phân tích độ nhạy (Sensitivity)', 'Sensitivity summary'),
+    change_log: tr('Nhật ký thay đổi', 'Change log'),
+    member_contribution: tr('Đóng góp thành viên', 'Member contribution'),
+  };
   return (
     <>
       <div className="grid2">

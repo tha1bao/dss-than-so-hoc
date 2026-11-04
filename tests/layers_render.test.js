@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { labelPlain, nextStepPlain, avgSkill, repMajor, SKILL_NEED } from '../src/plain.js';
 import { computeSignals } from '../shared/engine/numerology.js';
 import { score } from '../shared/engine/score.js';
+import { groupName, archTrait } from '../src/format.js';
+import { getMeaningVi, NUMBER_MEANINGS_VI } from '../src/data/number_meanings_vi.js';
 import FX from './fixtures/engine_py.json';
 
 const kb = FX.kb;
@@ -64,6 +66,26 @@ describe('Layers and plain text helper safety', () => {
     // fmt should safely handle undefined or number
     const { fmt } = require ? {} : {};
     expect(mockBenchmark.margin?.toFixed(2)).toBeUndefined();
+  });
+
+  it('all 29 number meanings in L6 have Vietnamese translations', () => {
+    expect(Object.keys(NUMBER_MEANINGS_VI)).toHaveLength(29);
+    for (const [key, val] of Object.entries(NUMBER_MEANINGS_VI)) {
+      expect(typeof val.meaning).toBe('string');
+      expect(val.meaning.length).toBeGreaterThan(10);
+      expect(typeof val.vocations).toBe('string');
+      expect(val.vocations.length).toBeGreaterThan(5);
+    }
+    // Test getMeaningVi helper
+    expect(getMeaningVi('PY', 7)?.meaning).toContain('trải nghiệm');
+    expect(getMeaningVi('VE', 6)?.meaning).toContain('Sao Kim');
+    expect(getMeaningVi('KB', 4)?.meaning).toContain('thực tiễn');
+  });
+
+  it('groupName and archTrait provide clean Vietnamese in vi mode', () => {
+    expect(groupName(kb, 'G1')).toBe('Số chủ đạo');
+    expect(groupName(kb, 'G5')).toBe('Số tên đầy đủ');
+    expect(archTrait(kb, 7)).toBe('Nghiên cứu, chiều sâu, tri thức');
   });
 });
 
