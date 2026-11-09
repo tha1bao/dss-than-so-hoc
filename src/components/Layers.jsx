@@ -295,16 +295,6 @@ export function L1({ out, kb, sel, setSel }) {
                           ` với tính cách ngành (${narrative.hits.map((g) => `${groupName(kb, g)}: ${sig[g]}`).join(', ')}). `,
                           ` (${narrative.hits.map((g) => `${groupName(kb, g)}: ${sig[g]}`).join(', ')}). `
                         )}
-                        {narrative.pctNF === 0 ? (
-                          <span className="muted">
-                            {tr(
-                              '(Đóng góp 0% do mức trùng này ở cận dưới trong các ngành bạn có số trùng sau khi chuẩn hóa so sánh).',
-                              '(Contributes 0% as this match is at the baseline among your matching groups).'
-                            )}
-                          </span>
-                        ) : (
-                          tr(`Yếu tố Thần số học đóng góp ${narrative.pctNF}% vào điểm số tổng hợp.`, `Numerology contributes ${narrative.pctNF}% to overall score.`)
-                        )}
                       </>
                     ) : (
                       tr(
@@ -313,6 +303,13 @@ export function L1({ out, kb, sel, setSel }) {
                       )
                     )}
                   </p>
+                  <div className="pillar-formula-box">
+                    <span className="formula-inline-tag">📌 {tr('Công thức tính điểm:', 'Score formula:')}</span>
+                    <div className="formula-inline-math">
+                      <b>{narrative.formulaNF}</b>
+                    </div>
+                    <span className="formula-inline-note">{narrative.formulaDetailNF}</span>
+                  </div>
                 </div>
 
                 {/* Trụ cột 2: Kỹ năng tự đánh giá */}
@@ -330,13 +327,17 @@ export function L1({ out, kb, sel, setSel }) {
                     {tr(' Điểm trung bình đạt ', ' Average score is ')}
                     <b>{fmt(narrative.avgSkillVal, 1)}/5 sao</b>
                     {tr(
-                      ` (mức chuẩn khuyến nghị là ≥ ${fmt(narrative.skillNeedVal, 1)}/5 sao). `,
-                      ` (recommended bar is ≥ ${fmt(narrative.skillNeedVal, 1)}/5). `
+                      ` (mức chuẩn khuyến nghị là ≥ ${fmt(narrative.skillNeedVal, 1)}/5 sao).`,
+                      ` (recommended bar is ≥ ${fmt(narrative.skillNeedVal, 1)}/5).`
                     )}
-                    {tr('Yếu tố kỹ năng đóng góp ', 'Skills contribute ')}
-                    <b>{narrative.pctSR}%</b>
-                    {tr(' vào điểm số tổng hợp.', ' to overall fit score.')}
                   </p>
+                  <div className="pillar-formula-box">
+                    <span className="formula-inline-tag">📌 {tr('Công thức tính điểm:', 'Score formula:')}</span>
+                    <div className="formula-inline-math">
+                      <b>{narrative.formulaSR}</b>
+                    </div>
+                    <span className="formula-inline-note">{narrative.formulaDetailSR}</span>
+                  </div>
                 </div>
 
                 {/* Trụ cột 3: Môi trường làm việc */}
@@ -354,21 +355,22 @@ export function L1({ out, kb, sel, setSel }) {
                         {tr('Môi trường bạn mong muốn là ', 'Your preferred environment is ')}
                         <b>"{narrative.chosenEnv}"</b>,
                         <span className="ok"> {tr('✓ hoàn toàn trùng khớp với môi trường của ngành', '✓ perfectly matches this major group')}</span>.
-                        {tr(' Đóng góp ', ' Contributes ')}
-                        <b>{narrative.pctENV}%</b>
-                        {tr(' vào điểm số tổng hợp.', ' to overall fit score.')}
                       </>
                     ) : (
                       <>
                         {tr('Môi trường bạn mong muốn là ', 'Your preferred environment is ')}
                         <b>"{narrative.chosenEnv}"</b>,
                         <span className="muted"> {tr(`khác với môi trường của ngành ("${narrative.majorEnv}")`, `differs from major's ("${narrative.majorEnv}")`)}</span>.
-                        {tr(' Đóng góp ', ' Contributes ')}
-                        <b>{narrative.pctENV}%</b>
-                        {tr(' vào điểm số tổng hợp.', ' to overall fit score.')}
                       </>
                     )}
                   </p>
+                  <div className="pillar-formula-box">
+                    <span className="formula-inline-tag">📌 {tr('Công thức tính điểm:', 'Score formula:')}</span>
+                    <div className="formula-inline-math">
+                      <b>{narrative.formulaENV}</b>
+                    </div>
+                    <span className="formula-inline-note">{narrative.formulaDetailENV}</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -393,6 +395,13 @@ export function L1({ out, kb, sel, setSel }) {
                 <span className="eq-term">{tr('Môi trường', 'Environment')}: <b>{narrative.pctENV}%</b></span>
                 <span className="eq-op">=</span>
                 <span className="eq-total"><b>{row.EC >= 1 ? pct(row.C) : '—'}</b> {tr('Phù hợp', 'Overall Fit')}</span>
+              </div>
+
+              <div className="verdict-formula-note">
+                <span className="small muted">
+                  <b>{tr('Lồng ghép công thức tổng hợp:', 'Combined Formula Breakdown:')}</b>{' '}
+                  <span>{narrative.formulaTotal}</span> ({tr(`áp dụng trọng số góc nhìn ${narrative.personaName}`, `applied weights for ${narrative.personaName}`)})
+                </span>
               </div>
 
               <div className="verdict-explanation">

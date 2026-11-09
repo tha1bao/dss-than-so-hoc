@@ -4,7 +4,7 @@ import { LABELS, targetAnalysis } from '../shared/engine/index.js';
 import { fmt, skillName, envName } from './format.js';
 import { tr, t } from './i18n.js';
 import { computeExtras } from '../shared/engine/numerology.js';
-import { archTrait, groupName } from './format.js';
+import { archTrait, groupName, PERSONA_NAME } from './format.js';
 import { getMeaningVi } from './data/number_meanings_vi.js';
 
 /** % phù hợp = C × 100 (C đã chuẩn hóa min–max trong chính học sinh → chỉ so sánh tương đối). */
@@ -161,7 +161,25 @@ export function buildNarrativeWhy(row, out, kb) {
     matchedGroups: r.groups ? r.groups.filter((g) => sig?.arch?.[g] === a).map((g) => groupName(kb, g)) : [],
   }));
 
-  // 3. Phân bổ điểm số (% đóng góp)
+  // 3. Phân bổ điểm số (% đóng góp) & Công thức lồng ghép trực quan
+  const [a, b, g] = r.weights ?? [0.111, 0.278, 0.611];
+  const personaName = PERSONA_NAME[r.persona] ?? r.persona;
+  const weightPctNF = Math.round(a * 1000) / 10;
+  const weightPctSR = Math.round(b * 1000) / 10;
+  const weightPctENV = Math.round(g * 1000) / 10;
+
+  const rawNF = row.NF;
+  const normNF = row.NF_n ?? row.NF;
+  const normPctNF = Math.round(normNF * 100);
+
+  const rawSR = row.SR;
+  const normSR = row.SR_n ?? row.SR;
+  const normPctSR = Math.round(normSR * 100);
+
+  const rawENV = row.ENV;
+  const normENV = row.ENV_n ?? row.ENV;
+  const normPctENV = Math.round(normENV * 100);
+
   const cNF = row.contrib?.NF ?? 0;
   const cSR = row.contrib?.SR ?? 0;
   const cENV = row.contrib?.ENV ?? 0;
@@ -169,6 +187,51 @@ export function buildNarrativeWhy(row, out, kb) {
   const pctSR = Math.round(cSR * 100);
   const pctENV = Math.round(cENV * 100);
   const totalPct = Math.round(row.C * 100);
+
+  // Chuỗi công thức trực quan từng trụ cột
+  const formulaNF = tr(
+    `Thần số học = ${normPctNF}% (mức trùng khớp) × ${fmt(weightPctNF, 1)}% (trọng số góc nhìn ${personaName}) = ${pctNF}%`,
+    `Numerology = ${normPctNF}% (match score) × ${fmt(weightPctNF, 1)}% (${personaName} weight) = ${pctNF}%`
+  );
+  const formulaSR = tr(
+    `Kỹ năng = ${normPctSR}% (mức sẵn sàng kỹ năng) × ${fmt(weightPctSR, 1)}% (trọng số góc nhìn ${personaName}) = ${pctSR}%`,
+    `Skills = ${normPctSR}% (skill readiness) × ${fmt(weightPctSR, 1)}% (${personaName} weight) = ${pctSR}%`
+  );
+  const formulaENV = tr(
+    `Môi trường = ${normPctENV}% (độ hợp môi trường) × ${fmt(weightPctENV, 1)}% (trọng số góc nhìn ${personaName}) = ${pctENV}%`,
+    `Environment = ${normPctENV}% (environment fit) × ${fmt(weightPctENV, 1)}% (${personaName} weight) = ${pctENV}%`
+  );
+  const formulaTotal = tr(
+    `Mức phù hợp tổng hợp = ${pctNF}% (Thần số học) + ${pctSR}% (Kỹ năng) + ${pctENV}% (Môi trường) = ${totalPct}%`,
+    `Overall Fit = ${pctNF}% (Numerology) + ${pctSR}% (Skills) + ${pctENV}% (Environment) = ${totalPct}%`
+  );
+
+  const formulaDetailNF = row.EC >= 1
+    ? (normPctNF === 0
+        ? tr(
+            `Bạn có ${row.EC} con số trùng (điểm gốc NF = ${fmt(rawNF)}), nhưng mức trùng này ở cận dưới trong các ngành bạn có số trùng (min NF = ${fmt(r.minmax?.NF?.[0] ?? rawNF)}), nên sau khi chuẩn hóa so sánh đạt 0%. Do đó: 0% × ${fmt(weightPctNF, 1)}% = 0%.`,
+            `You matched ${row.EC} number (raw NF = ${fmt(rawNF)}), but this is at the baseline among your matching majors (min NF = ${fmt(r.minmax?.NF?.[0] ?? rawNF)}), scaling to 0%. Multiplied by weight ${fmt(weightPctNF, 1)}%, contribution is 0%.`
+          )
+        : tr(
+            `Điểm Thần số học gốc là NF = ${fmt(rawNF)}. Sau khi chuẩn hóa so sánh giữa các ngành đạt ${normPctNF}%. Khi nhân với trọng số ${fmt(weightPctNF, 1)}% của góc nhìn ${personaName}, Thần số học đóng góp ${pctNF}% vào tổng điểm.`,
+            `Raw Numerology score is NF = ${fmt(rawNF)}, normalized to ${normPctNF}%. Multiplied by weight ${fmt(weightPctNF, 1)}%, contribution is ${pctNF}%.`
+          ))
+    : tr('Không có con số nào trùng khớp nên yếu tố này đóng góp 0%.', 'No matching numbers, contribution is 0%.');
+
+  const formulaDetailSR = tr(
+    `Điểm kỹ năng tự đánh giá trung bình của bạn là ${fmt(avgSkill(rawSR), 1)}/5 sao (điểm gốc SR = ${fmt(rawSR)}). Sau khi chuẩn hóa so sánh đạt ${normPctSR}%. Khi nhân với trọng số ${fmt(weightPctSR, 1)}% của góc nhìn ${personaName}, kỹ năng đóng góp ${pctSR}% vào tổng điểm.`,
+    `Your average self-rated skill is ${fmt(avgSkill(rawSR), 1)}/5 (raw SR = ${fmt(rawSR)}), scaled to ${normPctSR}%. Multiplied by weight ${fmt(weightPctSR, 1)}%, contribution is ${pctSR}%.`
+  );
+
+  const formulaDetailENV = Boolean(row.ENV)
+    ? tr(
+        `Môi trường bạn chọn ("${envName(kb, r.env)}") trùng hoàn toàn với môi trường của ngành (đạt 100%). Theo chuẩn ROC của góc nhìn ${personaName}, Môi trường là tiêu chí được ưu tiên hàng đầu với trọng số ${fmt(weightPctENV, 1)}%, do đó đóng góp ${pctENV}% vào tổng điểm.`,
+        `Your preferred environment matches the major group (100%). Under ${personaName} ROC weights, Environment carries ${fmt(weightPctENV, 1)}% weight, contributing ${pctENV}%.`
+      )
+    : tr(
+        `Môi trường bạn chọn khác với môi trường của ngành (đạt 0%), do đó dù trọng số là ${fmt(weightPctENV, 1)}% thì đóng góp vẫn là 0%.`,
+        `Your chosen environment differs from the major group (0%), so multiplied by weight ${fmt(weightPctENV, 1)}%, contribution is 0%.`
+      );
 
   // 4. Giải mã nhãn
   let labelReason = '';
@@ -223,10 +286,27 @@ export function buildNarrativeWhy(row, out, kb) {
     hits,
     avgSkillVal: avgSkill(row.SR),
     skillNeedVal: SKILL_NEED(kb),
+    personaName,
+    weightPctNF,
+    weightPctSR,
+    weightPctENV,
+    normPctNF,
+    normPctSR,
+    normPctENV,
+    rawNF,
+    rawSR,
+    rawENV,
     pctNF,
     pctSR,
     pctENV,
     totalPct,
+    formulaNF,
+    formulaSR,
+    formulaENV,
+    formulaTotal,
+    formulaDetailNF,
+    formulaDetailSR,
+    formulaDetailENV,
     rank: row.rank,
     totalRanked: r.ranked?.length ?? 0,
     label: row.label,

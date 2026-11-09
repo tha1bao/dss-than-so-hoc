@@ -112,6 +112,11 @@ describe('Layers and plain text helper safety', () => {
     expect(typeof n.totalPct).toBe('number');
     expect(typeof n.labelReason).toBe('string');
     expect(n.labelReason.length).toBeGreaterThan(10);
+
+    expect(n.formulaNF).toContain('Thần số học =');
+    expect(n.formulaSR).toContain('Kỹ năng =');
+    expect(n.formulaENV).toContain('Môi trường =');
+    expect(n.formulaTotal).toContain('Mức phù hợp tổng hợp =');
   });
 });
 

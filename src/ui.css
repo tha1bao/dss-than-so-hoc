@@ -1393,6 +1393,46 @@ table.tbl { border-collapse: collapse; width: 100%; font-size: 0.82rem; }
   margin: 0;
 }
 
+.pillar-formula-box {
+  margin-top: 10px;
+  padding: 9px 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.formula-inline-tag {
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--c-sr);
+}
+
+.formula-inline-math {
+  font-size: 0.88rem;
+  color: var(--ink);
+  font-family: var(--font);
+  line-height: 1.4;
+}
+
+.formula-inline-note {
+  font-size: 0.78rem;
+  color: var(--ink-3);
+  line-height: 1.4;
+}
+
+.verdict-formula-note {
+  margin-top: 6px;
+  padding: 8px 12px;
+  background: var(--surface-2);
+  border-radius: 6px;
+  border-left: 3px solid var(--c-sr);
+}
+
 /* Bước 4: Tổng kết & Lời khuyên */
 .verdict-equation-box {
   display: flex;

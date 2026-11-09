@@ -5,7 +5,7 @@ import { skillName, fmt, envName } from '../format.js';
 import { Status, LabelChip, Warnings } from './common.jsx';
 import WhatIf from './WhatIf.jsx';
 import { t, tr } from '../i18n.js';
-import { pct, repMajor, insightLine, nextStepPlain, stabWord, avgSkill, SKILL_NEED } from '../plain.js';
+import { pct, repMajor, insightLine, nextStepPlain, stabWord, avgSkill, SKILL_NEED, buildNarrativeWhy } from '../plain.js';
 import { admissionChance } from '../../shared/engine/kpi.js';
 
 const link = (fn) => (e) => { e.preventDefault(); fn(); };
@@ -26,6 +26,7 @@ function WhyDrawer({ out, kb, profile, base0, onClose, onSwitchProfile, onGo }) 
   const step = nextStepPlain(row, result, kb);
   const targetMajor = target?.major;
   const targetProfile = targetMajor ? (targetMajor.profile_id ?? targetMajor.profile) : null;
+  const narrative = useMemo(() => buildNarrativeWhy(row, out, kb), [row, out, kb]);
 
   const handleOpenFull = (e) => {
     e.preventDefault();
@@ -69,14 +70,20 @@ function WhyDrawer({ out, kb, profile, base0, onClose, onSwitchProfile, onGo }) 
               <span className="factor-label">{tr('Thần số học (Thiên hướng)', 'Numerology')}:</span>
               <span className="factor-desc">
                 <b>{row.EC}/{nOn}</b> {row.EC >= 1 ? tr('con số trùng tính cách', 'matching traits') : tr('không có con số trùng', 'no match')}
-                <span className="factor-pct"> (+{Math.round((row.contrib?.NF ?? 0) * 100)}%)</span>
+                <span className="factor-pct"> (+{narrative?.pctNF ?? 0}%)</span>
+                <span className="small muted" style={{ display: 'block', fontSize: '0.74rem', marginTop: 1 }}>
+                  {narrative?.normPctNF ?? 0}% × {fmt(narrative?.weightPctNF ?? 0, 1)}% = {narrative?.pctNF ?? 0}%
+                </span>
               </span>
             </div>
             <div className="factor-row">
               <span className="factor-label">{tr('Kỹ năng tự đánh giá', 'Self-rated skills')}:</span>
               <span className="factor-desc">
                 <b>{fmt(avgSkill(row.SR), 1)}/5</b> ({tr('mức chuẩn', 'bar')}: {fmt(SKILL_NEED(kb), 1)}/5)
-                <span className="factor-pct"> (+{Math.round((row.contrib?.SR ?? 0) * 100)}%)</span>
+                <span className="factor-pct"> (+{narrative?.pctSR ?? 0}%)</span>
+                <span className="small muted" style={{ display: 'block', fontSize: '0.74rem', marginTop: 1 }}>
+                  {narrative?.normPctSR ?? 0}% × {fmt(narrative?.weightPctSR ?? 0, 1)}% = {narrative?.pctSR ?? 0}%
+                </span>
               </span>
             </div>
             <div className="factor-row">
@@ -84,12 +91,15 @@ function WhyDrawer({ out, kb, profile, base0, onClose, onSwitchProfile, onGo }) 
               <span className="factor-desc">
                 {row.ENV ? <span className="ok">{tr('✓ Đúng môi trường bạn chọn', '✓ Fits your choice')}</span>
                   : <span className="muted">{tr('Khác môi trường bạn chọn', 'Differs from choice')}</span>}
-                <span className="factor-pct"> (+{Math.round((row.contrib?.ENV ?? 0) * 100)}%)</span>
+                <span className="factor-pct"> (+{narrative?.pctENV ?? 0}%)</span>
+                <span className="small muted" style={{ display: 'block', fontSize: '0.74rem', marginTop: 1 }}>
+                  {narrative?.normPctENV ?? 0}% × {fmt(narrative?.weightPctENV ?? 0, 1)}% = {narrative?.pctENV ?? 0}%
+                </span>
               </span>
             </div>
             <div className="drawer-equation">
               <span className="small">
-                {tr('Tổng kết:', 'Total:')} <b>{Math.round((row.contrib?.NF ?? 0) * 100)}% + {Math.round((row.contrib?.SR ?? 0) * 100)}% + {Math.round((row.contrib?.ENV ?? 0) * 100)}% = {row.EC >= 1 ? pct(row.C) : '—'}</b>
+                {tr('Tổng kết công thức:', 'Formula total:')} <b>{narrative?.pctNF ?? 0}% + {narrative?.pctSR ?? 0}% + {narrative?.pctENV ?? 0}% = {row.EC >= 1 ? pct(row.C) : '—'}</b>
               </span>
             </div>
           </div>
