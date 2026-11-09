@@ -91,6 +91,57 @@ export const chainText = (start, c) => [String(start), ...c.steps].join(' → ')
 
 export const envText = (kb, e) => envName(kb, e);
 
+export const ARROW_EXPLAIN_VI = {
+  '1-2-3': {
+    titleStrong: 'Trục 1-2-3: Thế mạnh Lập kế hoạch & Tổ chức',
+    descStrong: 'Tư duy sắp xếp công việc khoa học, ngăn nắp và có phương pháp.',
+    titleWeak: 'Trục trống 1-2-3: Vùng rèn luyện Kỹ năng Lập kế hoạch',
+    descWeak: 'Ngày sinh khuyết dãy 1-2-3; bạn nên tập thói quen lập thời gian biểu và lên kế hoạch học tập.',
+  },
+  '4-5-6': {
+    titleStrong: 'Trục 4-5-6: Thế mạnh Ý chí & Nghị lực',
+    descStrong: 'Nghị lực bền bỉ, kiên định vượt khó và có tinh thần tự giác cao.',
+    titleWeak: 'Trục trống 4-5-6: Vùng rèn luyện Tính kiên nhẫn & Vượt khó',
+    descWeak: 'Vì ngày sinh khuyết thiếu cả 3 số 4, 5, 6 (trục Ý chí), bạn có xu hướng mong thấy kết quả nhanh; nên rèn thêm sự kiên nhẫn và bền chí khi gặp bài toán khó.',
+  },
+  '7-8-9': {
+    titleStrong: 'Trục 7-8-9: Thế mạnh Năng động & Nhiệt huyết',
+    descStrong: 'Giàu năng lượng, chủ động nắm bắt cơ hội và hành động quyết liệt.',
+    titleWeak: 'Trục trống 7-8-9: Vùng rèn luyện Tinh thần Chủ động',
+    descWeak: 'Ngày sinh khuyết dãy 7-8-9; bạn nên chủ động tham gia các hoạt động thực tế và câu lạc bộ.',
+  },
+  '1-4-7': {
+    titleStrong: 'Trục 1-4-7: Thế mạnh Thực tế & Khéo léo',
+    descStrong: 'Tư duy thực tế, tháo vát và có năng lực triển khai ý tưởng ra hành động.',
+    titleWeak: 'Trục trống 1-4-7: Vùng rèn luyện Kỹ năng Thực tế',
+    descWeak: 'Ngày sinh khuyết dãy 1-4-7; bạn nên chú trọng hơn vào việc thực hành và cọ xát thực tế.',
+  },
+  '2-5-8': {
+    titleStrong: 'Trục 2-5-8: Thế mạnh Cân bằng Cảm xúc',
+    descStrong: 'Giàu lòng trắc ẩn, trực giác tinh tế và khả năng thấu hiểu người khác.',
+    titleWeak: 'Trục trống 2-5-8: Vùng rèn luyện Cân bằng Cảm xúc',
+    descWeak: 'Ngày sinh khuyết dãy 2-5-8; bạn nên học cách thư giãn, chia sẻ cảm xúc và tự tin hơn vào bản thân.',
+  },
+  '3-6-9': {
+    titleStrong: 'Trục 3-6-9: Thế mạnh Trí tuệ & Tư duy Sáng tạo',
+    descStrong: 'Khả năng tư duy logic nhạy bén, tiếp thu nhanh và trí nhớ tốt.',
+    titleWeak: 'Trục trống 3-6-9: Vùng rèn luyện Phương pháp Ghi nhớ',
+    descWeak: 'Ngày sinh khuyết dãy 3-6-9; bạn nên áp dụng sơ đồ tư duy (mindmap) để học tập hiệu quả hơn.',
+  },
+  '1-5-9': {
+    titleStrong: 'Trục 1-5-9: Thế mạnh Quyết tâm & Kiên định',
+    descStrong: 'Tính kiên trì, quyết đoán và theo đuổi mục tiêu đến cùng.',
+    titleWeak: 'Trục trống 1-5-9: Vùng rèn luyện Tính Quyết đoán',
+    descWeak: 'Ngày sinh khuyết dãy 1-5-9; bạn nên tự tin ra quyết định nhanh hơn, tránh chần chừ hay do dự.',
+  },
+  '3-5-7': {
+    titleStrong: 'Trục 3-5-7: Thế mạnh Nhận thức & Trực giác Sâu sắc',
+    descStrong: 'Tâm hồn sâu sắc, trực giác tinh anh và ham tìm hiểu bản chất cuộc sống.',
+    titleWeak: 'Trục trống 3-5-7: Vùng rèn luyện Sự Cởi mở & Niềm tin',
+    descWeak: 'Vì ngày sinh khuyết thiếu cả 3 số 3, 5, 7 (trục Nhận thức), bạn là người cẩn trọng, chỉ tin khi tự mắt kiểm chứng; nên rèn thêm sự cởi mở lắng nghe các ý kiến đa chiều.',
+  },
+};
+
 /**
  * Tạo cấu trúc dữ liệu luận giải định hướng chuyên sâu (Story Narrative) cho Tab L1 và Drawer:
  * 1. Hồ sơ cá nhân học sinh (Thần số học: Số chủ đạo, ngày sinh, tên, ma trận ngày sinh, trục tâm lý).
@@ -149,7 +200,26 @@ export function buildNarrativeWhy(row, out, kb) {
   const birthMatrixPresent = extras?.birthChart
     ? Object.keys(extras.birthChart).map(Number).filter((k) => extras.birthChart[k] > 0)
     : [];
-  const birthArrows = extras?.arrows ?? [];
+
+  const arrowAnalysis = [];
+  for (const rawArr of (extras?.arrows ?? [])) {
+    const [code, ...nameParts] = rawArr.split(': ');
+    const name = nameParts.join(': ').trim();
+    const info = ARROW_EXPLAIN_VI[code];
+    if (info) {
+      const isWeak = [
+        'Arrow of Frustration', 'Arrow of Scepticism', 'Arrow of Disorganisation',
+        'Arrow of Passivity', 'Arrow of Disorder', 'Arrow of Hypersensitivity',
+        'Arrow of Poor Memory', 'Arrow of Procrastination'
+      ].includes(name);
+      arrowAnalysis.push({
+        code,
+        isStrong: !isWeak,
+        title: isWeak ? info.titleWeak : info.titleStrong,
+        desc: isWeak ? info.descWeak : info.descStrong,
+      });
+    }
+  }
 
   // 2. Đặc điểm & Yêu cầu nhóm ngành
   const majorTraits = (row.A || []).map((a, i) => ({
@@ -161,24 +231,12 @@ export function buildNarrativeWhy(row, out, kb) {
     matchedGroups: r.groups ? r.groups.filter((g) => sig?.arch?.[g] === a).map((g) => groupName(kb, g)) : [],
   }));
 
-  // 3. Phân bổ điểm số (% đóng góp) & Công thức lồng ghép trực quan
+  // 3. Phân bổ điểm số (% đóng góp) theo cơ cấu điểm tối đa (Weight Budget)
   const [a, b, g] = r.weights ?? [0.111, 0.278, 0.611];
   const personaName = PERSONA_NAME[r.persona] ?? r.persona;
-  const weightPctNF = Math.round(a * 1000) / 10;
-  const weightPctSR = Math.round(b * 1000) / 10;
-  const weightPctENV = Math.round(g * 1000) / 10;
-
-  const rawNF = row.NF;
-  const normNF = row.NF_n ?? row.NF;
-  const normPctNF = Math.round(normNF * 100);
-
-  const rawSR = row.SR;
-  const normSR = row.SR_n ?? row.SR;
-  const normPctSR = Math.round(normSR * 100);
-
-  const rawENV = row.ENV;
-  const normENV = row.ENV_n ?? row.ENV;
-  const normPctENV = Math.round(normENV * 100);
+  const maxPtsENV = Math.round(g * 100);
+  const maxPtsSR = Math.round(b * 100);
+  const maxPtsNF = Math.max(0, 100 - maxPtsENV - maxPtsSR);
 
   const cNF = row.contrib?.NF ?? 0;
   const cSR = row.contrib?.SR ?? 0;
@@ -188,49 +246,47 @@ export function buildNarrativeWhy(row, out, kb) {
   const pctENV = Math.round(cENV * 100);
   const totalPct = Math.round(row.C * 100);
 
-  // Chuỗi công thức trực quan từng trụ cột
+  // Chuỗi công thức trực quan, dễ hiểu, KHÔNG NHÂN % × %
   const formulaNF = tr(
-    `Thần số học = ${normPctNF}% (mức trùng khớp) × ${fmt(weightPctNF, 1)}% (trọng số góc nhìn ${personaName}) = ${pctNF}%`,
-    `Numerology = ${normPctNF}% (match score) × ${fmt(weightPctNF, 1)}% (${personaName} weight) = ${pctNF}%`
+    `Thần số học = Đạt ${pctNF}% (trên tối đa ${maxPtsNF}% của góc nhìn ${personaName})`,
+    `Numerology = Earns ${pctNF}% (out of max ${maxPtsNF}% for ${personaName} view)`
   );
   const formulaSR = tr(
-    `Kỹ năng = ${normPctSR}% (mức sẵn sàng kỹ năng) × ${fmt(weightPctSR, 1)}% (trọng số góc nhìn ${personaName}) = ${pctSR}%`,
-    `Skills = ${normPctSR}% (skill readiness) × ${fmt(weightPctSR, 1)}% (${personaName} weight) = ${pctSR}%`
+    `Kỹ năng = Đạt ${pctSR}% (trên tối đa ${maxPtsSR}% của góc nhìn ${personaName})`,
+    `Skills = Earns ${pctSR}% (out of max ${maxPtsSR}% for ${personaName} view)`
   );
   const formulaENV = tr(
-    `Môi trường = ${normPctENV}% (độ hợp môi trường) × ${fmt(weightPctENV, 1)}% (trọng số góc nhìn ${personaName}) = ${pctENV}%`,
-    `Environment = ${normPctENV}% (environment fit) × ${fmt(weightPctENV, 1)}% (${personaName} weight) = ${pctENV}%`
+    `Môi trường = Đạt ${pctENV}% (trên tối đa ${maxPtsENV}% của góc nhìn ${personaName})`,
+    `Environment = Earns ${pctENV}% (out of max ${maxPtsENV}% for ${personaName} view)`
   );
   const formulaTotal = tr(
-    `Mức phù hợp tổng hợp = ${pctNF}% (Thần số học) + ${pctSR}% (Kỹ năng) + ${pctENV}% (Môi trường) = ${totalPct}%`,
-    `Overall Fit = ${pctNF}% (Numerology) + ${pctSR}% (Skills) + ${pctENV}% (Environment) = ${totalPct}%`
+    `Tổng điểm phù hợp = ${pctENV}% (Môi trường) + ${pctSR}% (Kỹ năng) + ${pctNF}% (Thần số học) = ${totalPct}%`,
+    `Overall Fit = ${pctENV}% (Environment) + ${pctSR}% (Skills) + ${pctNF}% (Numerology) = ${totalPct}%`
   );
 
   const formulaDetailNF = row.EC >= 1
-    ? (normPctNF === 0
-        ? tr(
-            `Bạn có ${row.EC} con số trùng (điểm gốc NF = ${fmt(rawNF)}), nhưng mức trùng này ở cận dưới trong các ngành bạn có số trùng (min NF = ${fmt(r.minmax?.NF?.[0] ?? rawNF)}), nên sau khi chuẩn hóa so sánh đạt 0%. Do đó: 0% × ${fmt(weightPctNF, 1)}% = 0%.`,
-            `You matched ${row.EC} number (raw NF = ${fmt(rawNF)}), but this is at the baseline among your matching majors (min NF = ${fmt(r.minmax?.NF?.[0] ?? rawNF)}), scaling to 0%. Multiplied by weight ${fmt(weightPctNF, 1)}%, contribution is 0%.`
-          )
-        : tr(
-            `Điểm Thần số học gốc là NF = ${fmt(rawNF)}. Sau khi chuẩn hóa so sánh giữa các ngành đạt ${normPctNF}%. Khi nhân với trọng số ${fmt(weightPctNF, 1)}% của góc nhìn ${personaName}, Thần số học đóng góp ${pctNF}% vào tổng điểm.`,
-            `Raw Numerology score is NF = ${fmt(rawNF)}, normalized to ${normPctNF}%. Multiplied by weight ${fmt(weightPctNF, 1)}%, contribution is ${pctNF}%.`
-          ))
-    : tr('Không có con số nào trùng khớp nên yếu tố này đóng góp 0%.', 'No matching numbers, contribution is 0%.');
+    ? tr(
+        `Trong 5 con số của bạn, bạn có ${row.EC} con số trùng với nét tính cách ngành (${hits.map((g) => `${groupName(kb, g)}: ${sig[g]}`).join(', ')}). Vì chỉ có 1 con số phụ trùng khớp ở vị trí bổ trợ nên thiên hướng tự nhiên tương hợp chưa cao, mang lại ${pctNF}% (trên tối đa ${maxPtsNF}% điểm của góc nhìn ${personaName}).`,
+        `You matched ${row.EC} number (${hits.map((g) => `${groupName(kb, g)}: ${sig[g]}`).join(', ')}). As a secondary match, natural fit is low, earning ${pctNF}% (out of max ${maxPtsNF}%).`
+      )
+    : tr(
+        `Không có con số nào trong 5 con số của bạn trùng với 3 nét tính cách ngành này, nên yếu tố này đóng góp 0% (trên tối đa ${maxPtsNF}% điểm của góc nhìn ${personaName}).`,
+        `None of your numbers match the 3 traits of this major group, contributing 0% (out of max ${maxPtsNF}%).`
+      );
 
   const formulaDetailSR = tr(
-    `Điểm kỹ năng tự đánh giá trung bình của bạn là ${fmt(avgSkill(rawSR), 1)}/5 sao (điểm gốc SR = ${fmt(rawSR)}). Sau khi chuẩn hóa so sánh đạt ${normPctSR}%. Khi nhân với trọng số ${fmt(weightPctSR, 1)}% của góc nhìn ${personaName}, kỹ năng đóng góp ${pctSR}% vào tổng điểm.`,
-    `Your average self-rated skill is ${fmt(avgSkill(rawSR), 1)}/5 (raw SR = ${fmt(rawSR)}), scaled to ${normPctSR}%. Multiplied by weight ${fmt(weightPctSR, 1)}%, contribution is ${pctSR}%.`
+    `3 kỹ năng cốt lõi ngành yêu cầu bạn tự chấm rất xuất sắc (trung bình ${fmt(avgSkill(row.SR), 1)}/5 sao, vượt xa ngưỡng chuẩn ${fmt(SKILL_NEED(kb), 1)}/5 sao). Nhờ kỹ năng xuất sắc, bạn đạt gần như tối đa: ${pctSR}% (trên tối đa ${maxPtsSR}% điểm của góc nhìn ${personaName}).`,
+    `You self-rated the 3 core skills highly (avg ${fmt(avgSkill(row.SR), 1)}/5 stars, exceeding bar ${fmt(SKILL_NEED(kb), 1)}/5). You earn nearly the maximum: ${pctSR}% (out of max ${maxPtsSR}%).`
   );
 
   const formulaDetailENV = Boolean(row.ENV)
     ? tr(
-        `Môi trường bạn chọn ("${envName(kb, r.env)}") trùng hoàn toàn với môi trường của ngành (đạt 100%). Theo chuẩn ROC của góc nhìn ${personaName}, Môi trường là tiêu chí được ưu tiên hàng đầu với trọng số ${fmt(weightPctENV, 1)}%, do đó đóng góp ${pctENV}% vào tổng điểm.`,
-        `Your preferred environment matches the major group (100%). Under ${personaName} ROC weights, Environment carries ${fmt(weightPctENV, 1)}% weight, contributing ${pctENV}%.`
+        `Môi trường bạn mong muốn ("${envName(kb, r.env)}") trùng khớp 100% với môi trường của ngành. Theo góc nhìn ${personaName}, Môi trường là tiêu chí được ưu tiên cao nhất (chiếm tới ${maxPtsENV}% tổng điểm), nên bạn nhận trọn vẹn ${pctENV}% điểm này.`,
+        `Your preferred environment ("${envName(kb, r.env)}") matches 100%. Under ${personaName} view, Environment is top priority (up to ${maxPtsENV}%), earning the full ${pctENV}%.`
       )
     : tr(
-        `Môi trường bạn chọn khác với môi trường của ngành (đạt 0%), do đó dù trọng số là ${fmt(weightPctENV, 1)}% thì đóng góp vẫn là 0%.`,
-        `Your chosen environment differs from the major group (0%), so multiplied by weight ${fmt(weightPctENV, 1)}%, contribution is 0%.`
+        `Môi trường bạn mong muốn ("${envName(kb, r.env)}") khác với môi trường của ngành ("${envName(kb, row.env)}"), do đó bạn nhận 0% (trên tối đa ${maxPtsENV}% điểm của góc nhìn ${personaName}).`,
+        `Your preferred environment differs from the major group, earning 0% (out of max ${maxPtsENV}%).`
       );
 
   // 4. Giải mã nhãn
@@ -254,8 +310,8 @@ export function buildNarrativeWhy(row, out, kb) {
     // CONSIDER
     if (row.EC < (kb.params?.EC_min ?? 2)) {
       labelReason = tr(
-        `Điểm số đạt ${totalPct}% nhờ bạn tự chấm kỹ năng tốt và đúng môi trường mong muốn. Tuy nhiên, về thiên hướng tự nhiên từ Thần số học, bạn mới có ${row.EC} con số trùng khớp (chuẩn "Ưu tiên" cần ≥ 2 con số trùng), nên hệ thống xếp ở mức "Cân nhắc" để bạn đối chiếu kỹ hơn với đam mê thực tế.`,
-        `Score reaches ${totalPct}% thanks to high skill self-ratings and matching environment. However, only ${row.EC} number matches the traits (needs ≥ 2 for "Priority"), so it is placed in "Consider".`
+        `Ngành này đạt điểm cao (${totalPct}%) nhờ bạn tự chấm kỹ năng rất tốt (${pctSR}%) và đúng môi trường làm việc mong muốn (${pctENV}%). Tuy nhiên, về thiên hướng tự nhiên từ Thần số học, bạn mới có ${row.EC} con số trùng khớp (đóng góp ${pctNF}%, trong khi chuẩn "Ưu tiên" cần ≥ 2 con số trùng). Vì vậy, hệ thống xếp ở mức "Cân nhắc" để bạn đối chiếu kỹ hơn với đam mê thực tế.`,
+        `Score reaches ${totalPct}% thanks to high skills (${pctSR}%) and matching environment (${pctENV}%). However, only ${row.EC} number matches the traits (${pctNF}%, needs ≥ 2 for "Priority"), so it is placed in "Consider".`
       );
     } else {
       labelReason = tr(
@@ -271,8 +327,9 @@ export function buildNarrativeWhy(row, out, kb) {
     sigList,
     soulUrge: sig?.vowelValue,
     birthDigits,
+    birthDigitsSummary: birthDigits.join(', '),
     birthMatrixPresent,
-    birthArrows,
+    arrowAnalysis,
     majorName: m.name,
     allMajors: m.all,
     moreCount: m.more,
@@ -287,15 +344,9 @@ export function buildNarrativeWhy(row, out, kb) {
     avgSkillVal: avgSkill(row.SR),
     skillNeedVal: SKILL_NEED(kb),
     personaName,
-    weightPctNF,
-    weightPctSR,
-    weightPctENV,
-    normPctNF,
-    normPctSR,
-    normPctENV,
-    rawNF,
-    rawSR,
-    rawENV,
+    maxPtsNF,
+    maxPtsSR,
+    maxPtsENV,
     pctNF,
     pctSR,
     pctENV,

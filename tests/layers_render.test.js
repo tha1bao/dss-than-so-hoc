@@ -116,7 +116,7 @@ describe('Layers and plain text helper safety', () => {
     expect(n.formulaNF).toContain('Thần số học =');
     expect(n.formulaSR).toContain('Kỹ năng =');
     expect(n.formulaENV).toContain('Môi trường =');
-    expect(n.formulaTotal).toContain('Mức phù hợp tổng hợp =');
+    expect(n.formulaTotal).toContain('Tổng điểm phù hợp =');
   });
 });
 

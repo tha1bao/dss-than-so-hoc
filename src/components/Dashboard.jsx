@@ -72,7 +72,7 @@ function WhyDrawer({ out, kb, profile, base0, onClose, onSwitchProfile, onGo }) 
                 <b>{row.EC}/{nOn}</b> {row.EC >= 1 ? tr('con số trùng tính cách', 'matching traits') : tr('không có con số trùng', 'no match')}
                 <span className="factor-pct"> (+{narrative?.pctNF ?? 0}%)</span>
                 <span className="small muted" style={{ display: 'block', fontSize: '0.74rem', marginTop: 1 }}>
-                  {narrative?.normPctNF ?? 0}% × {fmt(narrative?.weightPctNF ?? 0, 1)}% = {narrative?.pctNF ?? 0}%
+                  {tr(`Đạt ${narrative?.pctNF ?? 0}% (trên tối đa ${narrative?.maxPtsNF ?? 0}% của góc nhìn ${narrative?.personaName})`, `Earns ${narrative?.pctNF ?? 0}% (out of max ${narrative?.maxPtsNF ?? 0}%)`)}
                 </span>
               </span>
             </div>
@@ -82,7 +82,7 @@ function WhyDrawer({ out, kb, profile, base0, onClose, onSwitchProfile, onGo }) 
                 <b>{fmt(avgSkill(row.SR), 1)}/5</b> ({tr('mức chuẩn', 'bar')}: {fmt(SKILL_NEED(kb), 1)}/5)
                 <span className="factor-pct"> (+{narrative?.pctSR ?? 0}%)</span>
                 <span className="small muted" style={{ display: 'block', fontSize: '0.74rem', marginTop: 1 }}>
-                  {narrative?.normPctSR ?? 0}% × {fmt(narrative?.weightPctSR ?? 0, 1)}% = {narrative?.pctSR ?? 0}%
+                  {tr(`Đạt ${narrative?.pctSR ?? 0}% (trên tối đa ${narrative?.maxPtsSR ?? 0}% của góc nhìn ${narrative?.personaName})`, `Earns ${narrative?.pctSR ?? 0}% (out of max ${narrative?.maxPtsSR ?? 0}%)`)}
                 </span>
               </span>
             </div>
@@ -93,13 +93,13 @@ function WhyDrawer({ out, kb, profile, base0, onClose, onSwitchProfile, onGo }) 
                   : <span className="muted">{tr('Khác môi trường bạn chọn', 'Differs from choice')}</span>}
                 <span className="factor-pct"> (+{narrative?.pctENV ?? 0}%)</span>
                 <span className="small muted" style={{ display: 'block', fontSize: '0.74rem', marginTop: 1 }}>
-                  {narrative?.normPctENV ?? 0}% × {fmt(narrative?.weightPctENV ?? 0, 1)}% = {narrative?.pctENV ?? 0}%
+                  {tr(`Đạt ${narrative?.pctENV ?? 0}% (trên tối đa ${narrative?.maxPtsENV ?? 0}% của góc nhìn ${narrative?.personaName})`, `Earns ${narrative?.pctENV ?? 0}% (out of max ${narrative?.maxPtsENV ?? 0}%)`)}
                 </span>
               </span>
             </div>
             <div className="drawer-equation">
               <span className="small">
-                {tr('Tổng kết công thức:', 'Formula total:')} <b>{narrative?.pctNF ?? 0}% + {narrative?.pctSR ?? 0}% + {narrative?.pctENV ?? 0}% = {row.EC >= 1 ? pct(row.C) : '—'}</b>
+                {tr('Tổng kết công thức:', 'Formula total:')} <b>{narrative?.formulaTotal ?? `${narrative?.pctENV ?? 0}% + ${narrative?.pctSR ?? 0}% + ${narrative?.pctNF ?? 0}% = ${row.EC >= 1 ? pct(row.C) : '—'}`}</b>
               </span>
             </div>
           </div>

@@ -1281,6 +1281,53 @@ table.tbl { border-collapse: collapse; width: 100%; font-size: 0.82rem; }
   border-left-color: var(--c-env);
 }
 
+.arrow-explain-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.arrow-explain-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: var(--surface);
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+
+.arrow-type-pill {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 7px;
+  border-radius: 10px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.arrow-type-pill.strong {
+  background: var(--good-bg);
+  color: var(--good-ink);
+}
+
+.arrow-type-pill.growth {
+  background: var(--warn-bg);
+  color: var(--warn-ink);
+}
+
+.arrow-item-content {
+  flex: 1;
+}
+
+.arrow-item-content b {
+  font-size: 0.85rem;
+  color: var(--ink);
+  display: block;
+}
+
 /* Bước 2: Nét tính cách ngành */
 .major-traits-list {
   display: flex;

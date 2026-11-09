@@ -28,19 +28,19 @@ const COMP = [['NF', 'nf', 'Con số của bạn', 'Your numbers'], ['SR', 'sr',
 const ARROW_VI = {
   'Arrow of the Planner': 'Thế mạnh: Lập kế hoạch & Tổ chức',
   'Arrow of Will': 'Thế mạnh: Ý chí & Nghị lực',
-  'Arrow of Frustration': 'Vùng rèn luyện: Tính kiên nhẫn & Vượt khó',
+  'Arrow of Frustration': 'Vùng rèn luyện (do ngày sinh khuyết dãy 4-5-6): Tính kiên nhẫn & Vượt khó',
   'Arrow of Activity': 'Thế mạnh: Năng động & Nhiệt huyết',
-  'Arrow of Passivity': 'Vùng rèn luyện: Tinh thần chủ động & Dấn thân',
+  'Arrow of Passivity': 'Vùng rèn luyện (do ngày sinh khuyết dãy 7-8-9): Tinh thần chủ động & Dấn thân',
   'Arrow of Practicality': 'Thế mạnh: Thực tế & Khéo léo',
-  'Arrow of Disorder': 'Vùng rèn luyện: Kỷ luật & Ngăn nắp',
+  'Arrow of Disorder': 'Vùng rèn luyện (do ngày sinh khuyết dãy 1-4-7): Kỷ luật & Ngăn nắp',
   'Arrow of Emotional Balance': 'Thế mạnh: Cân bằng cảm xúc',
-  'Arrow of Hypersensitivity': 'Vùng rèn luyện: Cân bằng cảm xúc & Giảm âu lo',
+  'Arrow of Hypersensitivity': 'Vùng rèn luyện (do ngày sinh khuyết dãy 2-5-8): Cân bằng cảm xúc & Giảm âu lo',
   'Arrow of Intellect': 'Thế mạnh: Tư duy logic & Sáng dạ',
-  'Arrow of Poor Memory': 'Vùng rèn luyện: Phương pháp ghi nhớ & Tập trung',
+  'Arrow of Poor Memory': 'Vùng rèn luyện (do ngày sinh khuyết dãy 3-6-9): Phương pháp ghi nhớ & Tập trung',
   'Arrow of Determination': 'Thế mạnh: Quyết tâm & Kiên định',
-  'Arrow of Procrastination': 'Vùng rèn luyện: Quyết đoán & Tránh chần chừ',
+  'Arrow of Procrastination': 'Vùng rèn luyện (do ngày sinh khuyết dãy 1-5-9): Quyết đoán & Tránh chần chừ',
   'Arrow of Spirituality': 'Thế mạnh: Trực giác & Nhạy cảm tinh thần',
-  'Arrow of Scepticism': 'Vùng rèn luyện: Sự cởi mở & Lòng tin vào bản thân',
+  'Arrow of Scepticism': 'Vùng rèn luyện (do ngày sinh khuyết dãy 3-5-7): Sự cởi mở & Lòng tin vào bản thân',
 };
 
 function formatArrow(arrStr) {
@@ -48,7 +48,7 @@ function formatArrow(arrStr) {
   const name = rest.join(': ');
   const vi = ARROW_VI[name];
   if (!vi) return arrStr;
-  return tr(`${code}: ${vi} (${name})`, `${code}: ${name}`);
+  return tr(`${code}: ${vi}`, `${code}: ${name}`);
 }
 
 function useLayer(name) {
@@ -196,19 +196,33 @@ export function L1({ out, kb, sel, setSel }) {
                   <b>{tr('Ma trận ngày sinh & Trục tâm lý:', 'Birth Chart & Psychological Axes:')}</b>
                   <p className="small" style={{ margin: '4px 0 0' }}>
                     {tr(
-                      `Ngày sinh của bạn gồm các chữ số: [${narrative.birthMatrixPresent.join(', ')}]. `,
-                      `Your birth date contains numbers: [${narrative.birthMatrixPresent.join(', ')}]. `
+                      `Biểu đồ ngày sinh 3×3 của bạn có các chữ số: [${narrative.birthDigitsSummary}] (nằm ở các trục Thể chất, Tâm hồn và Trí não).`,
+                      `Your 3×3 birth chart contains numbers: [${narrative.birthDigitsSummary}].`
                     )}
-                    {narrative.birthArrows.length > 0 ? (
-                      <span>
-                        {tr('Hình thành các mũi tên tâm lý học đường: ', 'Forms key psychological arrows: ')}
-                        <b>{narrative.birthArrows.map((a) => {
-                          const [code] = a.split(':');
-                          return ARROW_VI[code] || a;
-                        }).join(' · ')}.</b>
-                      </span>
-                    ) : (
-                      <span>{tr('Các con số phân bổ hài hòa trên các trục Trí não, Tâm hồn và Thể chất.', 'Numbers are balanced across Mind, Soul, and Physical planes.')}</span>
+                  </p>
+                  {narrative.arrowAnalysis && narrative.arrowAnalysis.length > 0 ? (
+                    <div className="arrow-explain-list" style={{ marginTop: 8 }}>
+                      {narrative.arrowAnalysis.map((item, idx) => (
+                        <div key={idx} className="arrow-explain-item">
+                          <span className={`arrow-type-pill ${item.isStrong ? 'strong' : 'growth'}`}>
+                            {item.isStrong ? tr('Thế mạnh', 'Strength') : tr('Vùng rèn luyện', 'Growth Area')}
+                          </span>
+                          <div className="arrow-item-content">
+                            <b>{item.title}</b>
+                            <p className="small muted" style={{ margin: '2px 0 0', lineHeight: 1.4 }}>{item.desc}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="small muted" style={{ margin: '4px 0 0' }}>
+                      {tr('Các con số phân bổ đồng đều trên các trục Trí não, Tâm hồn và Thể chất.', 'Numbers are balanced across Mind, Soul, and Physical planes.')}
+                    </p>
+                  )}
+                  <p className="small muted" style={{ margin: '8px 0 0', fontStyle: 'italic', borderTop: '1px dashed var(--line-2)', paddingTop: 6 }}>
+                    {tr(
+                      '💡 Lưu ý: Các "Vùng rèn luyện" xuất hiện khi ngày sinh khuyết thiếu một dãy số (ví dụ trống cả 3 số 4, 5, 6 trên trục Ý chí). Đây là cơ hội để bạn trau dồi thêm kỹ năng mềm trong quá trình học đại học, không phải khuyết điểm cố định.',
+                      '💡 Note: Growth areas appear when a row or column is empty in the birth chart. They represent soft skills to nurture in college, not permanent flaws.'
                     )}
                   </p>
                 </div>
@@ -304,7 +318,7 @@ export function L1({ out, kb, sel, setSel }) {
                     )}
                   </p>
                   <div className="pillar-formula-box">
-                    <span className="formula-inline-tag">📌 {tr('Công thức tính điểm:', 'Score formula:')}</span>
+                    <span className="formula-inline-tag">📌 {tr('Cơ cấu & Điểm đạt được:', 'Score breakdown:')}</span>
                     <div className="formula-inline-math">
                       <b>{narrative.formulaNF}</b>
                     </div>
@@ -332,7 +346,7 @@ export function L1({ out, kb, sel, setSel }) {
                     )}
                   </p>
                   <div className="pillar-formula-box">
-                    <span className="formula-inline-tag">📌 {tr('Công thức tính điểm:', 'Score formula:')}</span>
+                    <span className="formula-inline-tag">📌 {tr('Cơ cấu & Điểm đạt được:', 'Score breakdown:')}</span>
                     <div className="formula-inline-math">
                       <b>{narrative.formulaSR}</b>
                     </div>
@@ -365,7 +379,7 @@ export function L1({ out, kb, sel, setSel }) {
                     )}
                   </p>
                   <div className="pillar-formula-box">
-                    <span className="formula-inline-tag">📌 {tr('Công thức tính điểm:', 'Score formula:')}</span>
+                    <span className="formula-inline-tag">📌 {tr('Cơ cấu & Điểm đạt được:', 'Score breakdown:')}</span>
                     <div className="formula-inline-math">
                       <b>{narrative.formulaENV}</b>
                     </div>
@@ -388,19 +402,19 @@ export function L1({ out, kb, sel, setSel }) {
 
             <div className="narrative-card-body">
               <div className="verdict-equation-box">
-                <span className="eq-term">{tr('Thần số học', 'Numerology')}: <b>{narrative.pctNF}%</b></span>
+                <span className="eq-term">{tr('Môi trường', 'Environment')}: <b>{narrative.pctENV}%</b></span>
                 <span className="eq-op">+</span>
                 <span className="eq-term">{tr('Kỹ năng', 'Skills')}: <b>{narrative.pctSR}%</b></span>
                 <span className="eq-op">+</span>
-                <span className="eq-term">{tr('Môi trường', 'Environment')}: <b>{narrative.pctENV}%</b></span>
+                <span className="eq-term">{tr('Thần số học', 'Numerology')}: <b>{narrative.pctNF}%</b></span>
                 <span className="eq-op">=</span>
                 <span className="eq-total"><b>{row.EC >= 1 ? pct(row.C) : '—'}</b> {tr('Phù hợp', 'Overall Fit')}</span>
               </div>
 
               <div className="verdict-formula-note">
                 <span className="small muted">
-                  <b>{tr('Lồng ghép công thức tổng hợp:', 'Combined Formula Breakdown:')}</b>{' '}
-                  <span>{narrative.formulaTotal}</span> ({tr(`áp dụng trọng số góc nhìn ${narrative.personaName}`, `applied weights for ${narrative.personaName}`)})
+                  <b>{tr('Tổng kết công thức:', 'Combined Formula:')}</b>{' '}
+                  <span>{narrative.formulaTotal}</span> ({tr(`áp dụng cơ cấu điểm theo góc nhìn ${narrative.personaName}`, `based on weight budget for ${narrative.personaName}`)})
                 </span>
               </div>
 
@@ -606,8 +620,11 @@ export function L2({ out, kb, sel, setSel }) {
                       })}
                     </ul>
                   ) : tr('không có trục đầy/trống', 'none')}
-                  <p className="small muted" style={{ marginTop: 4 }}>
-                    {tr('💡 Các "vùng rèn luyện" là tiềm năng có thể bồi dưỡng thêm trong môi trường đại học, không phải khuyết điểm cố định.', '💡 Growth areas are potentials that can be nurtured in university, not fixed flaws.')}
+                  <p className="small muted" style={{ marginTop: 6, lineHeight: 1.45 }}>
+                    {tr(
+                      '💡 Lưu ý: Mũi tên thế mạnh (★) hình thành khi ngày sinh có đủ 3 số trên cùng một trục. Ngược lại, mũi tên "vùng rèn luyện" (🌱) xuất hiện khi ngày sinh KHUYẾT THIẾU cả 3 số trên trục đó (ví dụ trống dãy 4-5-6 hoặc 3-5-7). Đây là cơ hội để bạn chủ động trau dồi thêm kỹ năng mềm trong quá trình học đại học, hoàn toàn không phải khuyết điểm cố định.',
+                      '💡 Note: Strengths (★) form when all 3 numbers are present. Growth areas (🌱) appear when a row or diagonal is missing all 3 numbers. They represent soft skills to nurture in college, not fixed flaws.'
+                    )}
                   </p>
                 </td>
               </tr>
