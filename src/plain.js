@@ -2,7 +2,10 @@
 // (C, EC, SR, ENV, weakList, targetAnalysis). Ký hiệu/công thức chỉ xuất hiện ở tầng Công thức (L4).
 import { LABELS, targetAnalysis } from '../shared/engine/index.js';
 import { fmt, skillName, envName } from './format.js';
-import { tr } from './i18n.js';
+import { tr, t } from './i18n.js';
+import { computeExtras } from '../shared/engine/numerology.js';
+import { archTrait, groupName } from './format.js';
+import { getMeaningVi } from './data/number_meanings_vi.js';
 
 /** % phù hợp = C × 100 (C đã chuẩn hóa min–max trong chính học sinh → chỉ so sánh tương đối). */
 export const pct = (x) => (x == null || Number.isNaN(x) ? '–' : `${Math.round(x * 100)}%`);
@@ -12,7 +15,7 @@ export const pct = (x) => (x == null || Number.isNaN(x) ? '–' : `${Math.round(
  * ngành đầu tiên có môi trường trùng môi trường đang chọn; không có thì ngành đầu tiên của nhóm.
  */
 export function repMajor(kb, pid, env) {
-  const ms = kb.majors.filter((m) => m.profile_id === pid);
+  const ms = kb?.majors ? kb.majors.filter((m) => m.profile_id === pid) : [];
   const m = ms.find((x) => x.env_code === env) ?? ms[0];
   return { name: m?.name_vi ?? pid, more: Math.max(0, ms.length - 1), all: ms };
 }
@@ -87,3 +90,148 @@ export function rootChain(n) {
 export const chainText = (start, c) => [String(start), ...c.steps].join(' → ');
 
 export const envText = (kb, e) => envName(kb, e);
+
+/**
+ * Tạo cấu trúc dữ liệu luận giải định hướng chuyên sâu (Story Narrative) cho Tab L1 và Drawer:
+ * 1. Hồ sơ cá nhân học sinh (Thần số học: Số chủ đạo, ngày sinh, tên, ma trận ngày sinh, trục tâm lý).
+ * 2. Yêu cầu & môi trường của nhóm ngành (3 nét tính cách, môi trường, 3 kỹ năng cốt lõi).
+ * 3. Đối chiếu & phân bổ điểm số (% đóng góp từng trụ cột: Thần số học, Kỹ năng, Môi trường).
+ * 4. Tổng kết mức độ phù hợp, giải mã nhãn mác (Ưu tiên / Cân nhắc / Thử thách) và bước rèn luyện tiếp theo.
+ */
+export function buildNarrativeWhy(row, out, kb) {
+  if (!row || !out) return null;
+  const { sig, result: r } = out;
+  const extras = sig && !sig.redacted ? computeExtras(sig, kb) : null;
+  const m = repMajor(kb, row.profile, r.env);
+  const nOn = r.groups ? r.groups.length : 5;
+  const hits = r.groups ? r.groups.filter((g) => row.khop?.[g] > 0) : [];
+
+  // 1. Hồ sơ Thần số học học sinh
+  const sigList = sig ? [
+    {
+      code: 'G1',
+      name: groupName(kb, 'G1'),
+      val: sig.G1,
+      meaning: getMeaningVi('PY', sig.G1)?.meaning ?? archTrait(kb, sig.G1),
+      matched: Boolean(row.khop?.G1 > 0),
+    },
+    {
+      code: 'G2',
+      name: groupName(kb, 'G2'),
+      val: sig.G2,
+      meaning: getMeaningVi('VE', sig.G2)?.meaning ?? archTrait(kb, sig.G2),
+      matched: Boolean(row.khop?.G2 > 0),
+    },
+    {
+      code: 'G4',
+      name: groupName(kb, 'G4'),
+      val: sig.G4,
+      meaning: getMeaningVi('KB', sig.G4)?.meaning ?? archTrait(kb, sig.G4),
+      matched: Boolean(row.khop?.G4 > 0),
+    },
+    {
+      code: 'G5',
+      name: groupName(kb, 'G5'),
+      val: sig.G5,
+      meaning: getMeaningVi('PY', sig.G5)?.meaning ?? archTrait(kb, sig.G5),
+      matched: Boolean(row.khop?.G5 > 0),
+    },
+    {
+      code: 'G6',
+      name: groupName(kb, 'G6'),
+      val: sig.G6,
+      meaning: getMeaningVi('KB', sig.G6)?.meaning ?? archTrait(kb, sig.G6),
+      matched: Boolean(row.khop?.G6 > 0),
+    },
+  ] : [];
+
+  const birthDigits = sig?.digits?.filter((d) => d > 0) ?? [];
+  const birthMatrixPresent = extras?.birthChart
+    ? Object.keys(extras.birthChart).map(Number).filter((k) => extras.birthChart[k] > 0)
+    : [];
+  const birthArrows = extras?.arrows ?? [];
+
+  // 2. Đặc điểm & Yêu cầu nhóm ngành
+  const majorTraits = (row.A || []).map((a, i) => ({
+    pos: i + 1,
+    archetype: a,
+    traitTitle: archTrait(kb, a),
+    skill: skillName(kb, a),
+    rating: row.KN?.[i] ?? 3,
+    matchedGroups: r.groups ? r.groups.filter((g) => sig?.arch?.[g] === a).map((g) => groupName(kb, g)) : [],
+  }));
+
+  // 3. Phân bổ điểm số (% đóng góp)
+  const cNF = row.contrib?.NF ?? 0;
+  const cSR = row.contrib?.SR ?? 0;
+  const cENV = row.contrib?.ENV ?? 0;
+  const pctNF = Math.round(cNF * 100);
+  const pctSR = Math.round(cSR * 100);
+  const pctENV = Math.round(cENV * 100);
+  const totalPct = Math.round(row.C * 100);
+
+  // 4. Giải mã nhãn
+  let labelReason = '';
+  if (row.label === LABELS.PRIORITY) {
+    labelReason = tr(
+      `Đạt chuẩn "Ưu tiên" vì bạn có ${row.EC} con số Thần số học hội tụ (yêu cầu ≥ 2) và kỹ năng tự đánh giá đạt trung bình ${fmt(avgSkill(row.SR), 1)}/5 sao (yêu cầu ≥ 3,5/5), không có kỹ năng yếu.`,
+      `Meets "Priority" because you have ${row.EC} matching numbers (needs ≥ 2) and skill average ${fmt(avgSkill(row.SR), 1)}/5 (needs ≥ 3.5/5) with no weak skills.`
+    );
+  } else if (row.label === LABELS.CHALLENGE) {
+    labelReason = tr(
+      `Được xếp ở mức "Thử thách" vì bạn có kỹ năng liên quan tự chấm còn thấp (≤ 2/5 sao: ${skillsText(kb, row.weakList ?? [])}). Nếu đam mê ngành này, bạn cần kế hoạch bồi dưỡng kỹ năng cụ thể.`,
+      `Ranked as "Challenge" because you self-rated a core skill low (≤ 2/5: ${skillsText(kb, row.weakList ?? [])}). Consider upskilling if pursuing this path.`
+    );
+  } else if (row.label === LABELS.NONE) {
+    labelReason = tr(
+      'Hệ thống không đề xuất nhóm ngành này vì bạn không có con số Thần số học nào trùng khớp với nét tính cách cốt lõi của ngành.',
+      'Not recommended because none of your Numerology numbers match the core traits of this major group.'
+    );
+  } else {
+    // CONSIDER
+    if (row.EC < (kb.params?.EC_min ?? 2)) {
+      labelReason = tr(
+        `Điểm số đạt ${totalPct}% nhờ bạn tự chấm kỹ năng tốt và đúng môi trường mong muốn. Tuy nhiên, về thiên hướng tự nhiên từ Thần số học, bạn mới có ${row.EC} con số trùng khớp (chuẩn "Ưu tiên" cần ≥ 2 con số trùng), nên hệ thống xếp ở mức "Cân nhắc" để bạn đối chiếu kỹ hơn với đam mê thực tế.`,
+        `Score reaches ${totalPct}% thanks to high skill self-ratings and matching environment. However, only ${row.EC} number matches the traits (needs ≥ 2 for "Priority"), so it is placed in "Consider".`
+      );
+    } else {
+      labelReason = tr(
+        `Bạn có ${row.EC} con số Thần số học hội tụ rất tốt, nhưng điểm kỹ năng tự đánh giá hiện tại đạt ${fmt(avgSkill(row.SR), 1)}/5 sao (hơi dưới ngưỡng chuẩn ${fmt(SKILL_NEED(kb), 1)}/5 sao). Khi rèn luyện thêm kỹ năng, ngành này sẽ lên thẳng mức "Ưu tiên".`,
+        `You have ${row.EC} matching numbers, but current skills average ${fmt(avgSkill(row.SR), 1)}/5 (below ${fmt(SKILL_NEED(kb), 1)}/5). Improving skills will raise this to "Priority".`
+      );
+    }
+  }
+
+  return {
+    studentName: sig?.name?.fullName || (sig?.name?.words ? sig.name.words.join(' ') : tr('Bạn', 'You')),
+    dobText: sig?.input ? `${String(sig.input.day).padStart(2, '0')}/${String(sig.input.month).padStart(2, '0')}/${sig.input.year}` : '',
+    sigList,
+    soulUrge: sig?.vowelValue,
+    birthDigits,
+    birthMatrixPresent,
+    birthArrows,
+    majorName: m.name,
+    allMajors: m.all,
+    moreCount: m.more,
+    majorProfile: row.profile,
+    majorTraits,
+    majorEnv: envName(kb, row.env),
+    chosenEnv: envName(kb, r.env),
+    isEnvMatch: Boolean(row.ENV),
+    EC: row.EC,
+    nOn,
+    hits,
+    avgSkillVal: avgSkill(row.SR),
+    skillNeedVal: SKILL_NEED(kb),
+    pctNF,
+    pctSR,
+    pctENV,
+    totalPct,
+    rank: row.rank,
+    totalRanked: r.ranked?.length ?? 0,
+    label: row.label,
+    labelReason,
+    step: nextStepPlain(row, r, kb),
+    insight: insightLine(row, r, kb),
+  };
+}

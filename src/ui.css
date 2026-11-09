@@ -1021,3 +1021,457 @@ table.tbl { border-collapse: collapse; width: 100%; font-size: 0.82rem; }
   border-left: 2px solid var(--good);
 }
 
+/* ============================================================
+   L1 VÌ SAO: BÀI LUẬN GIẢI ĐỊNH HƯỚNG TỔNG THỂ (4 BƯỚC)
+   ============================================================ */
+
+.l1-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.l1-hero-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-l);
+  padding: 16px 18px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  flex-wrap: wrap;
+}
+
+.l1-hero-left {
+  flex: 1;
+  min-width: 260px;
+}
+
+.l1-hero-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.l1-hero-major {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--ink);
+  margin: 0;
+}
+
+.l1-hero-verdict {
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--ink-2);
+  margin: 6px 0 0;
+}
+
+.l1-hero-score-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-2);
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius-s);
+  padding: 10px 18px;
+  min-width: 130px;
+  text-align: center;
+}
+
+.l1-hero-score {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.score-num {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--c-sr);
+  line-height: 1.1;
+}
+
+.score-label {
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+  margin-top: 2px;
+}
+
+.score-rank {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink-2);
+  margin-top: 4px;
+}
+
+/* Toggle chế độ xem: Luận giải định hướng vs Bảng đối chiếu */
+.l1-mode-switch {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.mode-btn {
+  padding: 7px 14px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: var(--radius-s);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink-2);
+  transition: all 0.15s ease;
+}
+
+.mode-btn:hover {
+  border-color: var(--c-sr);
+  color: var(--ink);
+}
+
+.mode-btn.active {
+  background: var(--c-sr);
+  border-color: var(--c-sr);
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 1px 3px rgba(42, 120, 214, 0.25);
+}
+
+/* Luận giải dạng Flow 4 bước */
+.narrative-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.narrative-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-l);
+  padding: 16px 18px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.narrative-card.highlight-card {
+  border-color: var(--c-sr);
+  background: var(--surface);
+}
+
+.narrative-card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.step-tag {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--c-sr);
+  font-size: 0.9rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1.5px solid var(--c-sr);
+}
+
+.step-tag.done {
+  background: var(--c-sr);
+  color: #fff;
+}
+
+.narrative-card-head h3 {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--ink);
+  margin: 0;
+}
+
+.narrative-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Lưới thẻ hồ sơ con số Thần số học */
+.profile-sig-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 10px;
+}
+
+.profile-sig-item {
+  background: var(--surface-2);
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius-s);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+
+.profile-sig-item.matched {
+  border-color: var(--c-sr);
+  background: rgba(42, 120, 214, 0.04);
+}
+
+.sig-item-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sig-item-badge {
+  font-weight: 800;
+  font-size: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--c-nf);
+  padding: 1px 7px;
+  border-radius: 6px;
+}
+
+.sig-item-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.sig-match-pill {
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: var(--good-bg);
+  color: var(--good-ink);
+  padding: 2px 7px;
+  border-radius: 10px;
+  margin-left: auto;
+}
+
+.sig-item-meaning {
+  font-size: 0.78rem;
+  color: var(--ink-2);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.narrative-sub-box {
+  background: var(--surface-2);
+  border-left: 3px solid var(--c-sr);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--ink-2);
+}
+
+.narrative-sub-box.env-box {
+  border-left-color: var(--c-env);
+}
+
+/* Bước 2: Nét tính cách ngành */
+.major-traits-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.major-trait-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius-s);
+  padding: 8px 12px;
+  flex-wrap: wrap;
+}
+
+.trait-pos-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  min-width: 54px;
+}
+
+.trait-detail {
+  flex: 1;
+  min-width: 200px;
+}
+
+.trait-detail b {
+  font-size: 0.9rem;
+  color: var(--ink);
+}
+
+.trait-match-badge {
+  font-size: 0.78rem;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.trait-match-badge.ok {
+  background: var(--good-bg);
+  color: var(--good-ink);
+  font-weight: 700;
+}
+
+.trait-match-badge.muted {
+  background: var(--surface);
+  border: 1px dashed var(--line);
+  color: var(--ink-3);
+}
+
+/* Bước 3: Phân bổ điểm số (% đóng góp) */
+.pillars-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pillar-item {
+  background: var(--surface-2);
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius-s);
+  padding: 12px 14px;
+}
+
+.pillar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.pillar-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pillar-badge {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+
+.pillar-badge.nf { background: var(--c-nf); }
+.pillar-badge.sr { background: var(--c-sr); }
+.pillar-badge.env { background: var(--c-env); color: var(--ink); }
+
+.pillar-contrib-val {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--c-sr);
+}
+
+.pillar-text {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--ink-2);
+  margin: 0;
+}
+
+/* Bước 4: Tổng kết & Lời khuyên */
+.verdict-equation-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface-2);
+  border: 1.5px dashed var(--c-sr);
+  border-radius: var(--radius-s);
+  padding: 10px 14px;
+  flex-wrap: wrap;
+}
+
+.eq-term {
+  font-size: 0.9rem;
+  color: var(--ink);
+}
+
+.eq-term b {
+  color: var(--c-sr);
+}
+
+.eq-op {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--ink-3);
+}
+
+.eq-total {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin-left: auto;
+}
+
+.eq-total b {
+  font-size: 1.25rem;
+  color: var(--c-sr);
+}
+
+.verdict-explanation {
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: var(--ink);
+}
+
+.student-advice-callout {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: rgba(42, 120, 214, 0.05);
+  border-left: 3px solid var(--c-sr);
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-top: 4px;
+}
+
+.advice-icon {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.student-advice-callout p {
+  color: var(--ink-2);
+  line-height: 1.45;
+  margin: 0;
+}
+
+/* Drawer Equation */
+.drawer-equation {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--line);
+  color: var(--ink-2);
+}
+
+.factor-pct {
+  font-weight: 800;
+  color: var(--c-sr);
+  margin-left: 4px;
+}
+
+

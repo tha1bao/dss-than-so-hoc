@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { labelPlain, nextStepPlain, avgSkill, repMajor, SKILL_NEED } from '../src/plain.js';
+import { labelPlain, nextStepPlain, avgSkill, repMajor, SKILL_NEED, buildNarrativeWhy } from '../src/plain.js';
 import { computeSignals } from '../shared/engine/numerology.js';
 import { score } from '../shared/engine/score.js';
 import { groupName, archTrait } from '../src/format.js';
@@ -86,6 +86,32 @@ describe('Layers and plain text helper safety', () => {
     expect(groupName(kb, 'G1')).toBe('Số chủ đạo');
     expect(groupName(kb, 'G5')).toBe('Số tên đầy đủ');
     expect(archTrait(kb, 7)).toBe('Nghiên cứu, chiều sâu, tri thức');
+  });
+
+  it('buildNarrativeWhy generates comprehensive 4-step story explanation', () => {
+    const mockOut = { sig, result: r, kb };
+    const rowP25 = r.rows.find((x) => x.profile === 'P25');
+    const n = buildNarrativeWhy(rowP25, mockOut, kb);
+
+    expect(n).toBeDefined();
+    expect(n.studentName.toUpperCase()).toContain('NGUYEN NGOC PHUC');
+    expect(n.dobText).toBe('01/01/2009');
+    expect(n.sigList).toHaveLength(5);
+    expect(n.sigList[0].name).toBe('Số chủ đạo');
+    expect(n.sigList[0].val).toBe(sig.G1);
+    expect(n.sigList[0].meaning.length).toBeGreaterThan(5);
+
+    expect(n.majorName).toBeDefined();
+    expect(n.majorTraits).toHaveLength(3);
+    expect(n.majorTraits[0].traitTitle.length).toBeGreaterThan(3);
+    expect(n.majorTraits[0].skill.length).toBeGreaterThan(3);
+
+    expect(typeof n.pctNF).toBe('number');
+    expect(typeof n.pctSR).toBe('number');
+    expect(typeof n.pctENV).toBe('number');
+    expect(typeof n.totalPct).toBe('number');
+    expect(typeof n.labelReason).toBe('string');
+    expect(n.labelReason.length).toBeGreaterThan(10);
   });
 });
 

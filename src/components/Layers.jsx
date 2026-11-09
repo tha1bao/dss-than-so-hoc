@@ -9,7 +9,7 @@ import { LabelChip, Warnings, LabelDistribution } from './common.jsx';
 import { Tex, tn, tt } from './Tex.jsx';
 import { t, tr, num, getLang } from '../i18n.js';
 import { getMeaningVi } from '../data/number_meanings_vi.js';
-import { pct, repMajor, avgSkill, SKILL_NEED, labelPlain, nextStepPlain, STAB_NAME, stabWord, py00Chain, rootChain, chainText } from '../plain.js';
+import { pct, repMajor, avgSkill, SKILL_NEED, labelPlain, nextStepPlain, STAB_NAME, stabWord, py00Chain, rootChain, chainText, buildNarrativeWhy } from '../plain.js';
 
 const WEEKDAY_VI = ['', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy', 'Chủ nhật'];
 const WEEKDAY_EN = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -95,11 +95,17 @@ function Head({ out, kb, row, setSel, children }) {
 // ---------------- L1 Vì sao? ----------------
 export function L1({ out, kb, sel, setSel }) {
   const r = out.result;
+  const sig = out.sig;
   const row = rowOf(out, sel);
+  const [viewMode, setViewMode] = useState('story'); // 'story' | 'table'
+
   if (!row) return <p className="empty">{t('Không có hồ sơ.')}</p>;
+
   const nOn = r.groups.length;
   const step = nextStepPlain(row, r, kb);
   const ties = row.EC >= 1 ? r.ranked.filter((x) => x !== row && Math.abs(x.C - row.C) <= 1e-9) : [];
+  const narrative = useMemo(() => buildNarrativeWhy(row, out, kb), [row, out, kb]);
+
   const say = {
     NF: row.EC >= 1 ? tr(`${row.EC} trong ${nOn} con số của bạn trùng với nét tính cách của nhóm ngành này.`, `${row.EC} of your ${nOn} numbers match this group's personality traits.`)
       : tr('Không con số nào của bạn trùng với nhóm ngành này.', 'None of your numbers match this group.'),
@@ -110,27 +116,343 @@ export function L1({ out, kb, sel, setSel }) {
   };
 
   return (
-    <section className="panel">
+    <section className="panel l1-panel">
       <Head out={out} kb={kb} row={row} setSel={setSel} />
-      <div className="l1-pct">{tr('Mức phù hợp', 'Overall fit')}: <b>{row.EC >= 1 ? pct(row.C) : '—'}</b> {row.rank ? `(${tr('hạng', 'rank')} ${row.rank}/${r.ranked.length})` : `(${tr('không xếp hạng', 'not ranked')})`}</div>
-      <div className="parts">
-        {COMP.map(([k, cls, name]) => {
-          const w = row.contrib?.[k] ?? 0;
-          return (
-            <div key={k} className="part">
-              <span className="part-name">{t(name)}</span>
-              <div className="part-bar"><span className={`bar-seg ${cls}`} style={{ width: `${Math.max(0, Math.min(1, w)) * 100}%` }} /></div>
-              <span className="num muted small">{fmt(w, 2)}</span>
-              <span className="part-say">{say[k]}</span>
+
+      {/* Hero Banner: Tổng kết mức phù hợp */}
+      <div className="l1-hero-banner">
+        <div className="l1-hero-left">
+          <div className="l1-hero-title-row">
+            <h2 className="l1-hero-major">{narrative?.majorName ?? row.profile}</h2>
+            <LabelChip label={row.label} />
+            {narrative?.moreCount > 0 && (
+              <span className="small muted">+{narrative.moreCount} {tr('ngành cùng nhóm', 'majors in group')}</span>
+            )}
+          </div>
+          <p className="l1-hero-verdict">{narrative?.labelReason}</p>
+        </div>
+        <div className="l1-hero-score-box">
+          <div className="l1-hero-score">
+            <span className="score-num">{row.EC >= 1 ? pct(row.C) : '—'}</span>
+            <span className="score-label">{tr('Mức phù hợp', 'Overall Fit')}</span>
+          </div>
+          <span className="score-rank">
+            {row.rank ? `${tr('Hạng', 'Rank')} #${row.rank}/${r.ranked.length}` : tr('Không xếp hạng', 'Unranked')}
+          </span>
+        </div>
+      </div>
+
+      {/* View Switcher: Luận giải định hướng vs Bảng đối chiếu */}
+      <div className="l1-mode-switch">
+        <button
+          type="button"
+          className={`mode-btn ${viewMode === 'story' ? 'active' : ''}`}
+          onClick={() => setViewMode('story')}
+        >
+          📖 {tr('Bài luận giải định hướng chi tiết', 'Detailed Guidance Narrative')}
+        </button>
+        <button
+          type="button"
+          className={`mode-btn ${viewMode === 'table' ? 'active' : ''}`}
+          onClick={() => setViewMode('table')}
+        >
+          📊 {tr('Bảng đối chiếu 3 trụ cột (Thanh đo)', 'Pillars Comparison Chart')}
+        </button>
+      </div>
+
+      {viewMode === 'story' && narrative && (
+        <div className="narrative-flow">
+          {/* Bước 1: Hồ sơ Thần số học của học sinh */}
+          <div className="narrative-card">
+            <div className="narrative-card-head">
+              <span className="step-tag">1</span>
+              <div>
+                <h3>{tr('Hồ sơ Thần số học của bạn', 'Your Numerology Profile')}</h3>
+                <span className="small muted">
+                  {tr(
+                    `Dựa trên họ tên "${narrative.studentName}" và ngày sinh ${narrative.dobText}:`,
+                    `Based on name "${narrative.studentName}" and birth date ${narrative.dobText}:`
+                  )}
+                </span>
+              </div>
             </div>
-          );
-        })}
-      </div>
-      <div className="l1-label">
-        <p><b>{t('Đánh giá')}:</b> {labelPlain(row, kb)}</p>
-        {step && <p><b>{tr('Bước tiếp theo để lên "Ưu tiên"', 'Next step to reach "Priority"')}:</b> {step}.</p>}
-        {ties.length > 0 && <p className="small muted">{tr(`Hòa điểm với ${ties.length} nhóm ngành khác:`, `Tied with ${ties.length} other group(s):`)} {ties.map((x) => repMajor(kb, x.profile, r.env).name).join(', ')}. {tr('Nhóm có mã đứng trước được xếp trên.', 'The group with the earlier code is ranked higher.')}</p>}
-      </div>
+
+            <div className="narrative-card-body">
+              <div className="profile-sig-grid">
+                {narrative.sigList.map((sigItem) => (
+                  <div key={sigItem.code} className={`profile-sig-item ${sigItem.matched ? 'matched' : ''}`}>
+                    <div className="sig-item-top">
+                      <span className="sig-item-badge">{sigItem.val}</span>
+                      <span className="sig-item-name">{sigItem.name}</span>
+                      {sigItem.matched && <span className="sig-match-pill">{tr('✓ Trùng nét ngành này', '✓ Matches major trait')}</span>}
+                    </div>
+                    <p className="sig-item-meaning">{sigItem.meaning}</p>
+                  </div>
+                ))}
+              </div>
+
+              {narrative.birthMatrixPresent.length > 0 && (
+                <div className="narrative-sub-box">
+                  <b>{tr('Ma trận ngày sinh & Trục tâm lý:', 'Birth Chart & Psychological Axes:')}</b>
+                  <p className="small" style={{ margin: '4px 0 0' }}>
+                    {tr(
+                      `Ngày sinh của bạn gồm các chữ số: [${narrative.birthMatrixPresent.join(', ')}]. `,
+                      `Your birth date contains numbers: [${narrative.birthMatrixPresent.join(', ')}]. `
+                    )}
+                    {narrative.birthArrows.length > 0 ? (
+                      <span>
+                        {tr('Hình thành các mũi tên tâm lý học đường: ', 'Forms key psychological arrows: ')}
+                        <b>{narrative.birthArrows.map((a) => {
+                          const [code] = a.split(':');
+                          return ARROW_VI[code] || a;
+                        }).join(' · ')}.</b>
+                      </span>
+                    ) : (
+                      <span>{tr('Các con số phân bổ hài hòa trên các trục Trí não, Tâm hồn và Thể chất.', 'Numbers are balanced across Mind, Soul, and Physical planes.')}</span>
+                    )}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Bước 2: Đặc điểm & Yêu cầu của nhóm ngành */}
+          <div className="narrative-card">
+            <div className="narrative-card-head">
+              <span className="step-tag">2</span>
+              <div>
+                <h3>{tr(`Đặc điểm & Yêu cầu của ngành ${narrative.majorName}`, `Requirements for ${narrative.majorName}`)}</h3>
+                <span className="small muted">
+                  {tr(
+                    `Các yếu tố cốt lõi giúp sinh viên học tốt và phát triển trong nhóm ngành này:`,
+                    `Core elements required to thrive in this major group:`
+                  )}
+                </span>
+              </div>
+            </div>
+
+            <div className="narrative-card-body">
+              <div className="major-traits-list">
+                {narrative.majorTraits.map((t) => (
+                  <div key={t.pos} className="major-trait-row">
+                    <span className="trait-pos-badge">{tr('Vị trí', 'Pos')} {t.pos}</span>
+                    <div className="trait-detail">
+                      <b>{t.traitTitle} <span className="small muted">({tr('Nét tính cách', 'Archetype')} {t.archetype})</span></b>
+                      <span className="small muted" style={{ display: 'block', marginTop: 2 }}>
+                        {tr('Kỹ năng tương ứng:', 'Linked skill:')} <b>{t.skill}</b>
+                      </span>
+                    </div>
+                    {t.matchedGroups.length > 0 ? (
+                      <span className="trait-match-badge ok">
+                        {tr(`Trùng ${t.matchedGroups.join(', ')} của bạn`, `Matches your ${t.matchedGroups.join(', ')}`)}
+                      </span>
+                    ) : (
+                      <span className="trait-match-badge muted">{tr('Bạn chưa có con số trùng nét này', 'No matching number')}</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <div className="narrative-sub-box env-box">
+                <b>{tr('Môi trường làm việc đặc trưng:', 'Typical work environment:')}</b>
+                <span> {narrative.majorEnv}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Bước 3: Đối chiếu & Phân bổ điểm số (% đóng góp) */}
+          <div className="narrative-card">
+            <div className="narrative-card-head">
+              <span className="step-tag">3</span>
+              <div>
+                <h3>{tr('Đối chiếu chi tiết & Phân bổ điểm số (% đóng góp)', 'Match Breakdown & Score Contributions')}</h3>
+                <span className="small muted">
+                  {tr(
+                    'Vì sao ra điểm số này? Từng trụ cột đóng góp bao nhiêu % vào kết quả:',
+                    'Why this score? How much each pillar contributes to overall fit:'
+                  )}
+                </span>
+              </div>
+            </div>
+
+            <div className="narrative-card-body">
+              <div className="pillars-breakdown">
+                {/* Trụ cột 1: Thần số học */}
+                <div className="pillar-item">
+                  <div className="pillar-header">
+                    <div className="pillar-title">
+                      <span className="pillar-badge nf">1</span>
+                      <b>{tr('Thần số học (Thiên hướng tự nhiên)', 'Numerology (Natural Tendencies)')}</b>
+                    </div>
+                    <span className="pillar-contrib-val">+{narrative.pctNF}%</span>
+                  </div>
+                  <p className="pillar-text">
+                    {narrative.EC >= 1 ? (
+                      <>
+                        {tr('Trong 5 con số của bạn, bạn có ', 'Out of your 5 numbers, you have ')}
+                        <b>{narrative.EC}/5 {tr('con số phù hợp', 'matching numbers')}</b>
+                        {tr(
+                          ` với tính cách ngành (${narrative.hits.map((g) => `${groupName(kb, g)}: ${sig[g]}`).join(', ')}). `,
+                          ` (${narrative.hits.map((g) => `${groupName(kb, g)}: ${sig[g]}`).join(', ')}). `
+                        )}
+                        {narrative.pctNF === 0 ? (
+                          <span className="muted">
+                            {tr(
+                              '(Đóng góp 0% do mức trùng này ở cận dưới trong các ngành bạn có số trùng sau khi chuẩn hóa so sánh).',
+                              '(Contributes 0% as this match is at the baseline among your matching groups).'
+                            )}
+                          </span>
+                        ) : (
+                          tr(`Yếu tố Thần số học đóng góp ${narrative.pctNF}% vào điểm số tổng hợp.`, `Numerology contributes ${narrative.pctNF}% to overall score.`)
+                        )}
+                      </>
+                    ) : (
+                      tr(
+                        'Bạn chưa có con số nào trùng khớp với nét tính cách ngành này (đóng góp 0%).',
+                        'None of your numbers match the traits of this major group (contributes 0%).'
+                      )
+                    )}
+                  </p>
+                </div>
+
+                {/* Trụ cột 2: Kỹ năng tự đánh giá */}
+                <div className="pillar-item">
+                  <div className="pillar-header">
+                    <div className="pillar-title">
+                      <span className="pillar-badge sr">2</span>
+                      <b>{tr('Kỹ năng tự đánh giá', 'Self-Rated Skills')}</b>
+                    </div>
+                    <span className="pillar-contrib-val">+{narrative.pctSR}%</span>
+                  </div>
+                  <p className="pillar-text">
+                    {tr('Dựa trên 3 kỹ năng bạn tự chấm: ', 'Based on your 3 self-rated skills: ')}
+                    <b>{narrative.majorTraits.map((t) => `${t.skill} (${t.rating}/5)`).join(' · ')}</b>.
+                    {tr(' Điểm trung bình đạt ', ' Average score is ')}
+                    <b>{fmt(narrative.avgSkillVal, 1)}/5 sao</b>
+                    {tr(
+                      ` (mức chuẩn khuyến nghị là ≥ ${fmt(narrative.skillNeedVal, 1)}/5 sao). `,
+                      ` (recommended bar is ≥ ${fmt(narrative.skillNeedVal, 1)}/5). `
+                    )}
+                    {tr('Yếu tố kỹ năng đóng góp ', 'Skills contribute ')}
+                    <b>{narrative.pctSR}%</b>
+                    {tr(' vào điểm số tổng hợp.', ' to overall fit score.')}
+                  </p>
+                </div>
+
+                {/* Trụ cột 3: Môi trường làm việc */}
+                <div className="pillar-item">
+                  <div className="pillar-header">
+                    <div className="pillar-title">
+                      <span className="pillar-badge env">3</span>
+                      <b>{tr('Môi trường làm việc', 'Work Environment')}</b>
+                    </div>
+                    <span className="pillar-contrib-val">+{narrative.pctENV}%</span>
+                  </div>
+                  <p className="pillar-text">
+                    {narrative.isEnvMatch ? (
+                      <>
+                        {tr('Môi trường bạn mong muốn là ', 'Your preferred environment is ')}
+                        <b>"{narrative.chosenEnv}"</b>,
+                        <span className="ok"> {tr('✓ hoàn toàn trùng khớp với môi trường của ngành', '✓ perfectly matches this major group')}</span>.
+                        {tr(' Đóng góp ', ' Contributes ')}
+                        <b>{narrative.pctENV}%</b>
+                        {tr(' vào điểm số tổng hợp.', ' to overall fit score.')}
+                      </>
+                    ) : (
+                      <>
+                        {tr('Môi trường bạn mong muốn là ', 'Your preferred environment is ')}
+                        <b>"{narrative.chosenEnv}"</b>,
+                        <span className="muted"> {tr(`khác với môi trường của ngành ("${narrative.majorEnv}")`, `differs from major's ("${narrative.majorEnv}")`)}</span>.
+                        {tr(' Đóng góp ', ' Contributes ')}
+                        <b>{narrative.pctENV}%</b>
+                        {tr(' vào điểm số tổng hợp.', ' to overall fit score.')}
+                      </>
+                    )}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Bước 4: Tổng kết & Lời khuyên định hướng */}
+          <div className="narrative-card highlight-card">
+            <div className="narrative-card-head">
+              <span className="step-tag done">4</span>
+              <div>
+                <h3>{tr('Tổng kết mức độ phù hợp & Lời khuyên định hướng', 'Summary & Guidance Advice')}</h3>
+                <span className="small muted">{tr('Đúc kết từ góc nhìn khoa học ra quyết định & tư vấn học đường', 'Decision Science & Student Guidance synthesis')}</span>
+              </div>
+            </div>
+
+            <div className="narrative-card-body">
+              <div className="verdict-equation-box">
+                <span className="eq-term">{tr('Thần số học', 'Numerology')}: <b>{narrative.pctNF}%</b></span>
+                <span className="eq-op">+</span>
+                <span className="eq-term">{tr('Kỹ năng', 'Skills')}: <b>{narrative.pctSR}%</b></span>
+                <span className="eq-op">+</span>
+                <span className="eq-term">{tr('Môi trường', 'Environment')}: <b>{narrative.pctENV}%</b></span>
+                <span className="eq-op">=</span>
+                <span className="eq-total"><b>{row.EC >= 1 ? pct(row.C) : '—'}</b> {tr('Phù hợp', 'Overall Fit')}</span>
+              </div>
+
+              <div className="verdict-explanation">
+                <p><b>{tr('Về nhãn khuyến nghị:', 'About recommendation label:')}</b> {narrative.labelReason}</p>
+                {step && (
+                  <p style={{ marginTop: 8 }}>
+                    <b>{tr('Gợi ý rèn luyện để nâng lên "Ưu tiên":', 'Next step to reach "Priority":')}</b> {step}.
+                  </p>
+                )}
+                {ties.length > 0 && (
+                  <p className="small muted" style={{ marginTop: 6 }}>
+                    {tr(`Hòa điểm với ${ties.length} nhóm ngành khác:`, `Tied with ${ties.length} other group(s):`)} {ties.map((x) => repMajor(kb, x.profile, r.env).name).join(', ')}.
+                  </p>
+                )}
+              </div>
+
+              <div className="student-advice-callout">
+                <span className="advice-icon">💡</span>
+                <p className="small">
+                  <b>{tr('Lời khuyên định hướng:', 'Guidance note:')}</b>{' '}
+                  {tr(
+                    'Thần số học đóng vai trò như một lăng kính tham khảo về thiên hướng tính cách tự nhiên, không quyết định tuyệt đối năng lực hay tương lai của bạn. Hãy kết hợp điểm số này với sở thích cá nhân, điều kiện học tập thực tế và trao đổi cùng thầy cô tư vấn để đưa ra lựa chọn sáng suốt nhất!',
+                    'Numerology provides a reflective lens on natural tendencies, not a rigid prophecy. Combine this insight with your real passions, academic readiness, and counseling advice.'
+                  )}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Chế độ bảng thanh đo đối chiếu (View Table) */}
+      {viewMode === 'table' && (
+        <div className="parts-container">
+          <div className="parts">
+            {COMP.map(([k, cls, name]) => {
+              const w = row.contrib?.[k] ?? 0;
+              return (
+                <div key={k} className="part">
+                  <span className="part-name">{t(name)}</span>
+                  <div className="part-bar">
+                    <span className={`bar-seg ${cls}`} style={{ width: `${Math.max(0, Math.min(1, w)) * 100}%` }} />
+                  </div>
+                  <span className="num muted small">{fmt(w, 2)}</span>
+                  <span className="part-say">{say[k]}</span>
+                </div>
+              );
+            })}
+          </div>
+          <div className="l1-label" style={{ marginTop: 14 }}>
+            <p><b>{t('Đánh giá')}:</b> {labelPlain(row, kb)}</p>
+            {step && <p><b>{tr('Bước tiếp theo để lên "Ưu tiên"', 'Next step to reach "Priority"')}:</b> {step}.</p>}
+            {ties.length > 0 && (
+              <p className="small muted">
+                {tr(`Hòa điểm với ${ties.length} nhóm ngành khác:`, `Tied with ${ties.length} other group(s):`)} {ties.map((x) => repMajor(kb, x.profile, r.env).name).join(', ')}. {tr('Nhóm có mã đứng trước được xếp trên.', 'The group with the earlier code is ranked higher.')}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
     </section>
   );
 }

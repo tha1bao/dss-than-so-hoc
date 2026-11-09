@@ -66,22 +66,30 @@ function WhyDrawer({ out, kb, profile, base0, onClose, onSwitchProfile, onGo }) 
           <div className="drawer-section">
             <h4>{tr('3 Yếu tố đóng góp vào điểm số:', '3 Factors contributing to score:')}</h4>
             <div className="factor-row">
-              <span className="factor-label">{tr('Con số thần số học', 'Numerology numbers')}:</span>
+              <span className="factor-label">{tr('Thần số học (Thiên hướng)', 'Numerology')}:</span>
               <span className="factor-desc">
-                <b>{row.EC}/{nOn}</b> {row.EC >= 1 ? tr('con số trùng khớp tính cách ngành', 'matching traits') : tr('không có con số trùng', 'no match')}
+                <b>{row.EC}/{nOn}</b> {row.EC >= 1 ? tr('con số trùng tính cách', 'matching traits') : tr('không có con số trùng', 'no match')}
+                <span className="factor-pct"> (+{Math.round((row.contrib?.NF ?? 0) * 100)}%)</span>
               </span>
             </div>
             <div className="factor-row">
               <span className="factor-label">{tr('Kỹ năng tự đánh giá', 'Self-rated skills')}:</span>
               <span className="factor-desc">
-                <b>{fmt(avgSkill(row.SR), 1)}/5</b> ({tr('mức chuẩn cần', 'required bar')}: {fmt(SKILL_NEED(kb), 1)}/5)
+                <b>{fmt(avgSkill(row.SR), 1)}/5</b> ({tr('mức chuẩn', 'bar')}: {fmt(SKILL_NEED(kb), 1)}/5)
+                <span className="factor-pct"> (+{Math.round((row.contrib?.SR ?? 0) * 100)}%)</span>
               </span>
             </div>
             <div className="factor-row">
               <span className="factor-label">{tr('Môi trường làm việc', 'Working environment')}:</span>
               <span className="factor-desc">
-                {row.ENV ? <span className="ok">{tr('✓ Đúng môi trường bạn mong muốn', '✓ Fits your chosen environment')} ({envName(kb, result.env)})</span>
-                  : <span className="muted">{tr('Khác môi trường bạn chọn', 'Differs from your choice')} ({envName(kb, row.env)})</span>}
+                {row.ENV ? <span className="ok">{tr('✓ Đúng môi trường bạn chọn', '✓ Fits your choice')}</span>
+                  : <span className="muted">{tr('Khác môi trường bạn chọn', 'Differs from choice')}</span>}
+                <span className="factor-pct"> (+{Math.round((row.contrib?.ENV ?? 0) * 100)}%)</span>
+              </span>
+            </div>
+            <div className="drawer-equation">
+              <span className="small">
+                {tr('Tổng kết:', 'Total:')} <b>{Math.round((row.contrib?.NF ?? 0) * 100)}% + {Math.round((row.contrib?.SR ?? 0) * 100)}% + {Math.round((row.contrib?.ENV ?? 0) * 100)}% = {row.EC >= 1 ? pct(row.C) : '—'}</b>
               </span>
             </div>
           </div>
