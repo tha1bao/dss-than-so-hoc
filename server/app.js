@@ -36,9 +36,11 @@ api.get('/auth/me', authenticate(), async (req, res) => {
 });
 
 // ---------------- tri thức (công khai – không có dữ liệu cá nhân) ----------------
+// Cache ở CDN Vercel 5 phút, hết hạn vẫn trả bản cũ trong lúc làm mới ngầm (Admin sửa → tối đa 5 phút mới thấy).
+const PUBLIC_CACHE = 'public, max-age=60, s-maxage=300, stale-while-revalidate=86400';
 api.get('/knowledge', async (req, res) => {
   const kb = await loadKb(req.query.set || null);
-  res.set('Cache-Control', 'public, max-age=300').json(kb);
+  res.set('Cache-Control', PUBLIC_CACHE).json(kb);
 });
 
 // ---------------- học sinh ----------------
@@ -116,8 +118,11 @@ api.get('/runs/:id', authenticate(), async (req, res) => {
 
 // ---------------- tầng giải thích L3 / L6 / L7 (công khai, chỉ tri thức) ----------------
 api.get('/layers/l3', async (_req, res) => {
-  res.json({ mapping: await q('SELECT * FROM v_l3_mapping ORDER BY archetype_no, profile_id, major_id'),
-    numberArchetype: await q('SELECT * FROM number_archetype_map ORDER BY number') });
+  const [mapping, numberArchetype] = await Promise.all([
+    q('SELECT * FROM v_l3_mapping ORDER BY archetype_no, profile_id, major_id'),
+    q('SELECT * FROM number_archetype_map ORDER BY number'),
+  ]);
+  res.set('Cache-Control', PUBLIC_CACHE).json({ mapping, numberArchetype });
 });
 api.get('/layers/l6', async (_req, res) => {
   const [meanings, rules, formulas, sources, citations, glossary] = await Promise.all([
@@ -125,7 +130,7 @@ api.get('/layers/l6', async (_req, res) => {
     q('SELECT * FROM formula ORDER BY layer, code'), q('SELECT * FROM source_book ORDER BY kind, code'),
     q('SELECT * FROM v_l6_rule_citation'), q('SELECT * FROM glossary ORDER BY group_code, term'),
   ]);
-  res.json({ meanings, rules, formulas, sources, citations, glossary });
+  res.set('Cache-Control', PUBLIC_CACHE).json({ meanings, rules, formulas, sources, citations, glossary });
 });
 api.get('/layers/l7', async (_req, res) => {
   const [docs, lineage, release] = await Promise.all([
@@ -136,7 +141,7 @@ api.get('/layers/l7', async (_req, res) => {
        UNION ALL SELECT 'admission_benchmark', COUNT(*), MIN(src_ref) FROM admission_benchmark UNION ALL SELECT 'whatif_scenario', COUNT(*), MIN(src_ref) FROM whatif_scenario`),
     q1('SELECT id, label, content_hash, created_at, note FROM kb_release ORDER BY id DESC LIMIT 1'),
   ]);
-  res.json({ docs, lineage, release });
+  res.set('Cache-Control', PUBLIC_CACHE).json({ docs, lineage, release });
 });
 
 // ---------------- Admin ----------------

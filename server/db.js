@@ -13,7 +13,7 @@ for (const k of ['DB_HOST', 'DB_USER', 'DB_NAME', 'JWT_SECRET']) if (!process.en
 export const pool = mysql.createPool({
   host: process.env.DB_HOST, port: Number(process.env.DB_PORT || 4000), user: process.env.DB_USER,
   password: process.env.DB_PASSWORD, database: process.env.DB_NAME,
-  connectionLimit: Number(process.env.DB_POOL || 5), waitForConnections: true, enableKeepAlive: true,
+  connectionLimit: Number(process.env.DB_POOL || 10), waitForConnections: true, enableKeepAlive: true,
   supportBigNumbers: true, bigNumberStrings: false, // số > 2^53 (id AUTO_RANDOM) → chuỗi; COUNT… vẫn là số
   decimalNumbers: true, dateStrings: true, timezone: 'Z', charset: 'utf8mb4',
   ssl: process.env.DB_SSL === 'false' ? undefined : { minVersion: 'TLSv1.2', rejectUnauthorized: true },
