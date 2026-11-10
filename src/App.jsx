@@ -7,6 +7,8 @@ import { TipProvider } from './components/common.jsx';
 import StudentView from './pages/StudentView.jsx';
 import { Login, StudentList, GuestForm, Admin, Home } from './pages/Pages.jsx';
 import { TestRunner, TestReport } from './pages/Usability.jsx';
+import Register from './pages/Register.jsx';
+import { LinkCodeButton } from './components/LinkCode.jsx';
 import { t, tr, getLang, setLang } from './i18n.js';
 
 class ErrorBoundary extends Component {
@@ -106,7 +108,8 @@ export default function App() {
     if (p1 && guest) page = <StudentView source={{ kind: 'guest', person: guest }} user={null} layer={p1} sel={route.query.get('p')} go={go} />;
     else page = <GuestForm initial={guest} onSubmit={(g) => { setGuest(g); go(`/guest/${p1 || 'l0'}${route.query.get('p') ? `?p=${route.query.get('p')}` : ''}`); }} />;
   } else if (!user) {
-    page = p0 === 'login' ? <Login onLogin={(s) => { setSess(s); go(homeFor(s.user)); }} /> : <Home />;
+    const onLogin = (s) => { setSess(s); go(homeFor(s.user)); };
+    page = p0 === 'login' ? <Login onLogin={onLogin} /> : p0 === 'register' ? <Register onLogin={onLogin} /> : <Home />;
   } else if (p0 === 's' && p1) {
     page = <StudentView key={p1} source={{ kind: 'student', id: p1 }} user={user} layer={p2 ?? 'l0'} sel={route.query.get('p')} go={go} />;
   } else if (p0 === 'students' && user.role !== 'student') {
@@ -130,12 +133,18 @@ export default function App() {
             {user && user.role !== 'student' && <a className="btn" href="#/students">{t('Danh sách')}</a>}
             {user && ['admin', 'counselor'].includes(user.role) && <a className="btn" href="#/test/report">{t('Test khả dụng')}</a>}
             {user && user.role === 'admin' && <a className="btn" href="#/admin">{t('Quản trị')}</a>}
+            {user && user.role === 'student' && !String(user.personCode ?? '').startsWith('SIM-') && <LinkCodeButton />}
           </nav>
           <button type="button" className="btn icon" onClick={toggleLang} lang={lang === 'en' ? 'vi' : 'en'} aria-label="Ngôn ngữ / Language">{lang === 'en' ? 'VI' : 'EN'}</button>
           <button type="button" className="btn icon" onClick={cycleTheme} aria-label={t({ auto: 'Giao diện: theo máy', light: 'Giao diện: sáng', dark: 'Giao diện: tối' }[theme])} title={t({ auto: 'Giao diện: theo máy', light: 'Giao diện: sáng', dark: 'Giao diện: tối' }[theme])}>{{ auto: '◐', light: '☀', dark: '☾' }[theme]}</button>
           {user ? (
             <span className="who"><span className="role-chip">{ROLE_NAME[user.role]}</span>{user.displayName}<button type="button" className="btn" onClick={logout}>{t('Đăng xuất')}</button></span>
-          ) : p0 !== 'login' ? <a className="btn" href="#/login">{t('Đăng nhập')}</a> : null}
+          ) : (
+            <>
+              {p0 !== 'register' && <a className="btn" href="#/register">{tr('Đăng ký', 'Sign up')}</a>}
+              {p0 !== 'login' && <a className="btn" href="#/login">{t('Đăng nhập')}</a>}
+            </>
+          )}
         </header>
         <main key={lang}>
           <ErrorBoundary key={`${lang}-${route.parts.join('/')}-${route.query.get('p') ?? ''}`}>

@@ -27,7 +27,7 @@ export function Login({ onLogin }) {
       <form className="panel" onSubmit={submit}>
         <p className="guest-cta"><a className="btn primary" href="#/guest">{tr('Chưa có tài khoản? Dùng thử ngay, không cần đăng nhập →', 'No account? Try it now without logging in →')}</a></p>
         <h2 style={{ marginBottom: 4 }}>{t('Đăng nhập')}</h2>
-        <p className="small muted" style={{ marginBottom: 10 }}>{tr('Dành cho học sinh, phụ huynh và tư vấn viên đã được nhà trường cấp tài khoản.', 'For students, parents and counselors who were given an account.')}</p>
+        <p className="small muted" style={{ marginBottom: 10 }}>{tr('Dành cho học sinh, phụ huynh và tư vấn viên. ', 'For students, parents and counselors. ')}<a href="#/register">{tr('Chưa có tài khoản? Đăng ký', 'No account? Sign up')}</a></p>
         <label className="field"><span>{t('Tên đăng nhập')}</span><input type="text" value={u} onChange={(e) => setU(e.target.value)} autoComplete="username" required /></label>
         <label className="field"><span>{t('Mật khẩu')}</span><input type="password" value={p} onChange={(e) => setP(e.target.value)} autoComplete="current-password" required /></label>
         {err && <p className="err" role="alert">{err}</p>}
@@ -83,12 +83,13 @@ export function StudentList({ user, go }) {
         </select>
         {user.role === 'admin' && (
           <select value={dataset} onChange={(e) => setDataset(e.target.value)} aria-label={t('Bộ dữ liệu')}>
-            <option value="SIM_120">{t('75 HS mô phỏng (ASS3)')}</option><option value="ASS2_300">{t('300 HS ASS2')}</option>
+            <option value="SIM_120">{t('75 HS mô phỏng (ASS3)')}</option><option value="ASS2_300">{t('300 HS ASS2')}</option><option value="LIVE">{tr('HS tự đăng ký', 'Self-registered students')}</option>
           </select>
         )}
         <span className="small muted">{rows.length} {tr('học sinh', 'students')}</span>
       </div>
       {err && <p className="err">{err}</p>}
+      {data && !data.students.length && user.role === 'counselor' && <p className="empty">{tr('Chưa có học sinh nào được phân công cho bạn. Quản trị viên sẽ phân công sau khi duyệt tài khoản.', 'No students assigned to you yet. An administrator will assign students after approving your account.')}</p>}
       {!data ? <p className="empty">{t('Đang tải và tính…')}</p> : (
         <div className="tbl-wrap" style={{ maxHeight: '64vh' }}>
           <table className="tbl">
@@ -113,7 +114,10 @@ export function StudentList({ user, go }) {
 /** Điểm mạnh STR = 3 kỹ năng cao nhất; bằng điểm → kỹ năng đứng trước (SK01 … SK33) – quy ước web ASS2. */
 export const topStrengths = (skills) => SKILL_ARCHS.map((a, i) => ({ a, v: skills[a], i })).sort((x, y) => y.v - x.v || x.i - y.i).slice(0, 3).map((x) => x.a);
 
-export function GuestForm({ initial, onSubmit }) {
+/**
+ * Bảng hỏi 4 bước. Dùng cho khách (không lưu) và cho HS đăng ký tài khoản (Register.jsx truyền title/submitLabel/onBack/error).
+ */
+export function GuestForm({ initial, onSubmit, title, intro, submitLabel, onBack, onDraft, error, busy }) {
   const [kb, setKb] = useState(null);
   const [kbErr, setKbErr] = useState(null);
   // Kỹ năng KHÔNG chọn sẵn (null) để học sinh không bỏ qua; bản cũ đã lưu trong phiên vẫn dùng lại được.
@@ -122,6 +126,7 @@ export function GuestForm({ initial, onSubmit }) {
   const [touched, setTouched] = useState(false);
   useEffect(() => { getKnowledge().then(setKb).catch((e) => setKbErr(e.message)); }, []);
   useEffect(() => { window.scrollTo(0, 0); }, [step]);
+  useEffect(() => { onDraft?.(f); }, [f]); // eslint-disable-line react-hooks/exhaustive-deps
   const set = (patch) => setF((x) => ({ ...x, ...patch }));
 
   const errs = {};
@@ -150,8 +155,8 @@ export function GuestForm({ initial, onSubmit }) {
   return (
     <form className="panel wizard" onSubmit={submit} noValidate>
       <div className="wizard-head">
-        <h2>{tr('Khám phá nhóm ngành hợp với bạn', 'Find majors that fit you')}</h2>
-        <p className="small muted">{tr('Khoảng 3 phút · tính ngay trên máy của bạn, không gửi họ tên/ngày sinh đi đâu và không lưu lại.', 'About 3 minutes · computed on your device; your name and birth date are not sent anywhere or saved.')}</p>
+        <h2>{title ?? tr('Khám phá nhóm ngành hợp với bạn', 'Find majors that fit you')}</h2>
+        <p className="small muted">{intro ?? tr('Khoảng 3 phút · tính ngay trên máy của bạn, không gửi họ tên/ngày sinh đi đâu và không lưu lại.', 'About 3 minutes · computed on your device; your name and birth date are not sent anywhere or saved.')}</p>
         <ol className="wizard-steps" aria-label={tr('Các bước', 'Steps')}>
           {STEPS.map((x, i) => (
             <li key={x} className={i === step ? 'on' : i < step ? 'done' : ''} aria-current={i === step ? 'step' : undefined}>
@@ -236,11 +241,14 @@ export function GuestForm({ initial, onSubmit }) {
         </div>
       )}
 
+      {error && step === 3 && <p className="small err" role="alert">{error}</p>}
       <div className="wizard-nav">
-        {step > 0 ? <button type="button" className="btn" onClick={back}>← {tr('Quay lại', 'Back')}</button> : <a className="btn ghost" href="#/">← {tr('Trang đầu', 'Home')}</a>}
+        {step > 0 ? <button type="button" className="btn" onClick={back}>← {tr('Quay lại', 'Back')}</button>
+          : onBack ? <button type="button" className="btn" onClick={onBack}>← {tr('Quay lại', 'Back')}</button>
+          : <a className="btn ghost" href="#/">← {tr('Trang đầu', 'Home')}</a>}
         {step < 3
           ? <button type="submit" className="btn primary">{tr('Tiếp tục', 'Next')} →</button>
-          : <button type="submit" className="btn primary">{t('Xem kết quả')} →</button>}
+          : <button type="submit" className="btn primary" disabled={busy}>{busy ? tr('Đang gửi…', 'Sending…') : `${submitLabel ?? t('Xem kết quả')} →`}</button>}
       </div>
     </form>
   );
@@ -254,8 +262,11 @@ export function Admin({ user }) {
   const [edit, setEdit] = useState(null);
   const [msg, setMsg] = useState(null);
   const canEdit = user.adminScope === 'kb';
+  const canApprove = user.adminScope === 'system';
+  const [pending, setPending] = useState(null);
   const load = () => {
     api('/admin/audit').then(setAudit).catch((e) => setMsg(e.message));
+    api('/admin/pending-users').then(setPending).catch((e) => setMsg(e.message));
     clearLayers(); api('/layers/l6').then((d) => setMeanings(d.meanings)).catch((e) => setMsg(e.message));
   };
   useEffect(load, []);
@@ -264,6 +275,14 @@ export function Admin({ user }) {
     try {
       await api(`/admin/number-meanings/${edit.id}`, { method: 'PUT', body: { meaning: edit.meaning, vocations: edit.vocations, reason: edit.reason, rowVersion: edit.row_version } });
       setEdit(null); setMsg(t('Đã lưu – audit_log đã ghi trước/sau.')); getKnowledge(true); load();
+    } catch (e) { setMsg(e.message); }
+  };
+  const decide = async (u, ok) => {
+    setMsg(null);
+    try {
+      await api(`/admin/users/${u.id}/${ok ? 'approve' : 'reject'}`, { method: 'POST' });
+      setMsg(ok ? tr(`Đã duyệt tài khoản ${u.username}.`, `Approved ${u.username}.`) : tr(`Đã từ chối và xóa đăng ký ${u.username}.`, `Rejected and removed ${u.username}.`));
+      load();
     } catch (e) { setMsg(e.message); }
   };
   return (
@@ -275,8 +294,29 @@ export function Admin({ user }) {
       <div className="seg" role="group" style={{ marginBottom: 10 }}>
         <button type="button" aria-pressed={tab === 'meanings'} onClick={() => setTab('meanings')}>{t('Ý nghĩa con số')} ({meanings?.length ?? '…'})</button>
         <button type="button" aria-pressed={tab === 'audit'} onClick={() => setTab('audit')}>{t('Nhật ký audit')} ({audit?.length ?? '…'})</button>
+        <button type="button" aria-pressed={tab === 'pending'} onClick={() => setTab('pending')}>{tr('Tài khoản chờ duyệt', 'Pending accounts')} ({pending?.length ?? '…'})</button>
       </div>
       {msg && <p className="small" role="status" style={{ marginBottom: 8 }}>{msg}</p>}
+      {tab === 'pending' && pending && (
+        pending.length === 0 ? <p className="empty">{tr('Không có tài khoản nào chờ duyệt.', 'No accounts waiting for approval.')}</p> : (
+          <div className="tbl-wrap">
+            <p className="small muted" style={{ marginBottom: 6 }}>{canApprove ? tr('Kiểm tra đơn vị công tác trước khi duyệt. Từ chối sẽ xóa đăng ký.', 'Check the organisation before approving. Rejecting removes the registration.') : tr('Chỉ quản trị hệ thống được duyệt – bạn đang ở chế độ xem.', 'Only system admins can approve – view only.')}</p>
+            <table className="tbl">
+              <thead><tr><th>{tr('Tên đăng nhập', 'Username')}</th><th>{tr('Họ tên', 'Name')}</th><th>{tr('Đơn vị · chức vụ', 'Organisation · title')}</th><th className="r">{tr('Năm KN', 'Years')}</th><th>{tr('Ngày đăng ký', 'Registered')}</th><th /></tr></thead>
+              <tbody>{pending.map((u) => (
+                <tr key={u.id}>
+                  <td className="mono">{u.username}</td><td>{u.full_name}</td><td className="small">{u.organization}{u.role_title ? ` · ${u.role_title}` : ''}</td>
+                  <td className="r">{u.years ?? '—'}</td><td className="small">{String(u.created_at).slice(0, 16)}</td>
+                  <td>{canApprove && <span style={{ display: 'flex', gap: 4 }}>
+                    <button type="button" className="btn primary" onClick={() => decide(u, true)}>{tr('Duyệt', 'Approve')}</button>
+                    <button type="button" className="btn" onClick={() => decide(u, false)}>{tr('Từ chối', 'Reject')}</button>
+                  </span>}</td>
+                </tr>
+              ))}</tbody>
+            </table>
+          </div>
+        )
+      )}
       {tab === 'meanings' && meanings && (
         <div className="tbl-wrap" style={{ maxHeight: '64vh' }}>
           <table className="tbl">
@@ -336,7 +376,7 @@ export function Home() {
       </section>
       <section className="panel home-note">
         <p className="small"><b>{tr('Lưu ý quan trọng', 'Important')}:</b> {tr('Đây là công cụ tham khảo do nhóm sinh viên DSS301 xây dựng với dữ liệu mô phỏng. Thần số học không có giá trị dự báo khoa học. Hãy dùng kết quả để trò chuyện với gia đình và thầy cô, kết hợp với sở thích, học lực và điểm thi của bạn.', 'This is a reference tool built by a DSS301 student group with simulated data. Numerology has no scientific predictive value. Use the results to talk with family and teachers, alongside your interests, grades and exam scores.')}</p>
-        <p className="small muted" style={{ marginTop: 6 }}>{tr('Đã có tài khoản do nhà trường cấp?', 'Have an account from your school?')} <a href="#/login">{t('Đăng nhập')}</a></p>
+        <p className="small muted" style={{ marginTop: 6 }}>{tr('Muốn lưu kết quả và chia sẻ với bố mẹ, thầy cô?', 'Want to save results and share them with parents or teachers?')} <a href="#/register">{tr('Tạo tài khoản', 'Create an account')}</a> · <a href="#/login">{t('Đăng nhập')}</a></p>
       </section>
     </div>
   );

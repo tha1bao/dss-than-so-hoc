@@ -17,7 +17,10 @@ export async function login(username, password, reqId) {
   if (!u || !password) throw HttpError(400, 'Thiếu tên đăng nhập hoặc mật khẩu');
   if (tooMany(u)) throw HttpError(429, 'Sai quá nhiều lần, thử lại sau 15 phút');
   const user = await q1('SELECT id, username, password_hash, role, admin_scope, display_name, person_code, locale, is_active FROM app_user WHERE username = ?', [u]);
-  const ok = user && user.is_active && (await bcrypt.compare(String(password), user.password_hash));
+  const pwOk = !!user && (await bcrypt.compare(String(password), user.password_hash));
+  // đúng mật khẩu nhưng chưa kích hoạt (TVV tự đăng ký đang chờ duyệt) → báo rõ thay vì "sai mật khẩu"
+  if (pwOk && !user.is_active) throw HttpError(403, 'Tài khoản đang chờ quản trị viên duyệt hoặc đã bị khóa');
+  const ok = pwOk;
   if (!ok) {
     const f = fails.get(u) ?? { n: 0, at: Date.now() }; f.n += 1; f.at = Date.now(); fails.set(u, f);
     await audit({ userId: user?.id ?? null, action: 'LOGIN_FAIL', table: 'app_user', rowKey: u, requestId: reqId });
@@ -26,11 +29,16 @@ export async function login(username, password, reqId) {
   fails.delete(u);
   await q('UPDATE app_user SET last_login_at = NOW() WHERE id = ?', [user.id]);
   await audit({ userId: user.id, action: 'LOGIN', table: 'app_user', rowKey: u, requestId: reqId });
-  const claims = { sub: user.id, role: user.role, scope: user.admin_scope, person: user.person_code };
+  return issueToken(user);
+}
+
+/** Cấp JWT + thông tin công khai (dùng chung cho đăng nhập và đăng ký). */
+export function issueToken(user) {
+  const claims = { sub: String(user.id), role: user.role, scope: user.admin_scope ?? null, person: user.person_code };
   return { token: jwt.sign(claims, SECRET, { expiresIn: TTL }), user: publicUser(user) };
 }
 
-export const publicUser = (u) => ({ id: u.id, username: u.username, role: u.role, adminScope: u.admin_scope ?? null,
+export const publicUser = (u) => ({ id: String(u.id), username: u.username, role: u.role, adminScope: u.admin_scope ?? null,
   displayName: u.display_name, personCode: u.person_code, locale: u.locale ?? 'vi' });
 
 /** Middleware: đọc Bearer token. `required=false` cho route công khai (vẫn gắn req.user nếu có). */

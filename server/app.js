@@ -6,6 +6,7 @@ import { loadKb, invalidateKb } from './kb.js';
 import { login, authenticate, requireRole, requireAdminScope, visibleStudentIds, assertCanSee, canSeePii, canSeeContext,
   defaultPersona, publicUser, HttpError } from './auth.js';
 import { audit } from './audit.js';
+import { register, myLinkCode, pendingUsers, decide } from './register.js';
 import { loadStudent, loadStudents, sanitizeOptions, redactSignals, computeFor, persistRun } from './compute.js';
 import { ENGINE_VERSION, LABELS } from '../shared/engine/index.js';
 import { validateSession, susScore } from '../shared/usability.js';
@@ -29,6 +30,12 @@ api.get('/health', async (_req, res) => {
 
 // ---------------- xác thực ----------------
 api.post('/auth/login', async (req, res) => res.json(await login(req.body?.username, req.body?.password, req.id)));
+api.post('/auth/register', async (req, res) => {
+  const ip = String(req.headers['x-forwarded-for'] ?? req.socket?.remoteAddress ?? 'unknown').split(',')[0].trim();
+  const out = await register(req.body, { ip, requestId: req.id });
+  res.status(201).json(out);
+});
+api.get('/auth/link-code', authenticate(), requireRole('student'), async (req, res) => res.json(await myLinkCode(req.user)));
 api.get('/auth/me', authenticate(), async (req, res) => {
   const u = await q1('SELECT id, username, role, admin_scope, display_name, person_code, locale FROM app_user WHERE id = ?', [req.user.id]);
   if (!u) throw HttpError(401, 'Tài khoản không còn tồn tại');
@@ -53,7 +60,7 @@ const maskRow = (s, user) => ({
 /** Danh sách HS được xem (tên che với Admin) + tóm tắt Top-1 tính tại chỗ theo persona của người xem. */
 api.get('/students', authenticate(), async (req, res) => {
   const ids = await visibleStudentIds(req.user);
-  const dataset = req.query.dataset === 'ASS2_300' ? 'ASS2_300' : 'SIM_120';
+  const dataset = ['ASS2_300', 'LIVE'].includes(req.query.dataset) ? req.query.dataset : 'SIM_120';
   let rows;
   if (ids === null) rows = await q('SELECT * FROM student WHERE dataset = ? ORDER BY id', [dataset]);
   else if (!ids.length) rows = [];
@@ -150,6 +157,11 @@ api.get('/admin/audit', authenticate(), requireRole('admin'), async (req, res) =
     FROM audit_log a LEFT JOIN app_user u ON u.id = a.user_id ORDER BY a.at DESC LIMIT 200`));
 });
 
+/** Tài khoản tư vấn viên tự đăng ký đang chờ duyệt – mọi admin xem được, chỉ Admin hệ thống duyệt / từ chối. */
+api.get('/admin/pending-users', authenticate(), requireRole('admin'), async (_req, res) => res.json(await pendingUsers()));
+api.post('/admin/users/:id/approve', authenticate(), requireAdminScope('system'), async (req, res) => res.json(await decide(req.user.id, req.params.id, true, req.id)));
+api.post('/admin/users/:id/reject', authenticate(), requireAdminScope('system'), async (req, res) => res.json(await decide(req.user.id, req.params.id, false, req.id)));
+
 /** TC11: Admin tri thức sửa ý nghĩa con số → audit_log cùng transaction; khóa lạc quan bằng row_version. */
 api.put('/admin/number-meanings/:id', authenticate(), requireAdminScope('kb'), async (req, res) => {
   const { meaning, vocations, reason, rowVersion } = req.body || {};
@@ -226,7 +238,7 @@ api.use((_req, _res, next) => next(HttpError(404, 'Không có API này')));
 app.use((err, req, res, _next) => {
   const status = err.status || (err.type === 'entity.parse.failed' ? 400 : 500);
   if (status >= 500) console.error(`[${req.id}]`, err);
-  res.status(status).json({ error: status >= 500 ? 'Lỗi máy chủ' : err.message, requestId: req.id });
+  res.status(status).json({ error: status >= 500 ? 'Lỗi máy chủ' : err.message, ...(err.fields && status < 500 ? { fields: err.fields } : {}), requestId: req.id });
 });
 
 export { LABELS };
