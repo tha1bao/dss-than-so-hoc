@@ -1664,3 +1664,4 @@ main { min-width: 0; }
   .l1-hero-banner { flex-direction: column; }
   .topbar .sim-badge { order: 5; }
 }
+a.btn { text-decoration: none; display: inline-block; }

@@ -192,7 +192,7 @@ export function GuestForm({ initial, onSubmit }) {
               );
             })}
           </div>
-          {errs.env && touched && <p className="small err">{errs.env}</p>}
+          {errs.env && touched && <p className="small err" role="alert">{errs.env}</p>}
         </fieldset>
       )}
 
@@ -209,7 +209,7 @@ export function GuestForm({ initial, onSubmit }) {
                 <div key={a} className={`likert-row ${missing ? 'missing' : ''}`}>
                   <span id={`lk-${a}`} className="likert-label"><b>{sp?.name ?? skillName(kbL, a)}</b><span className="small muted">{sp?.example}</span></span>
                   <span className="likert-scale" role="radiogroup" aria-labelledby={`lk-${a}`}>
-                    {[1, 2, 3, 4, 5].map((v) => <button key={v} type="button" role="radio" aria-checked={f.skills[a] === v} aria-label={`${v} – ${words[v - 1]}`} title={words[v - 1]} onClick={() => set({ skills: { ...f.skills, [a]: v } })}>{v}</button>)}
+                    {[1, 2, 3, 4, 5].map((v) => <button key={v} type="button" role="radio" aria-checked={f.skills[a] === v} aria-label={`${v} – ${words[v - 1]}`} title={words[v - 1]} onClick={() => setF((x) => ({ ...x, skills: { ...x.skills, [a]: v } }))}>{v}</button>)}
                   </span>
                 </div>
               );
@@ -230,13 +230,12 @@ export function GuestForm({ initial, onSubmit }) {
             <p className="small muted" style={{ margin: '0 0 6px' }}>{tr('Tổng 3 môn, thang 30. Hiện chỉ so được với điểm chuẩn của 18 ngành tại Trường ĐH Công nghiệp Hà Nội.', 'Sum of 3 subjects, out of 30. Currently only compared with cut-offs of 18 majors at Hanoi University of Industry.')}</p>
             <div className="checks exam-grid">{[['A00', tr('Toán · Lý · Hóa', 'Maths · Physics · Chem')], ['A01', tr('Toán · Lý · Anh', 'Maths · Physics · English')], ['D01', tr('Toán · Văn · Anh', 'Maths · Lit · English')], ['B00', tr('Toán · Hóa · Sinh', 'Maths · Chem · Bio')]].map(([c, lbl]) => (
               <label key={c}><span><b>{c}</b> <span className="small muted">{lbl}</span></span><input type="number" min="0" max="30" step="0.25" value={f.exam[c] ?? ''}
-                onChange={(e) => set({ exam: { ...f.exam, [c]: e.target.value === '' ? undefined : Number(e.target.value) } })} /></label>
+                onChange={(e) => { const v = e.target.value === '' ? undefined : Number(e.target.value); setF((x) => ({ ...x, exam: { ...x.exam, [c]: v } })); }} /></label>
             ))}</div>
           </fieldset>
         </div>
       )}
 
-      {touched && stepErr[step] && <p className="small err" role="alert">{stepErr[step]}</p>}
       <div className="wizard-nav">
         {step > 0 ? <button type="button" className="btn" onClick={back}>← {tr('Quay lại', 'Back')}</button> : <a className="btn ghost" href="#/">← {tr('Trang đầu', 'Home')}</a>}
         {step < 3

@@ -5,6 +5,7 @@ import { SKILL_ARCHS } from '../../shared/engine/index.js';
 import { skillName, envName, PERSONA_NAME } from '../format.js';
 import { t, tr } from '../i18n.js';
 import { pct, repMajor } from '../plain.js';
+import { skillPlain } from '../data/plain_inputs.js';
 
 const Seg = ({ value, options, onChange, label }) => (
   <div className="seg" role="group" aria-label={label}>
@@ -127,7 +128,7 @@ export default function WhatIf({ kb, out, base, opt, setOpt, person, target, set
             const orig = person.skills[a];
             const chg = delta[a] ?? 0;
             const now = Math.max(1, Math.min(5, orig + chg));
-            const nm = skillName(kb, a);
+            const nm = skillPlain(a)?.name ?? skillName(kb, a);
             const isWeak = now <= kb.params.Weak_max;
             return (
               <div key={a} className={`sk-row ${isWeak ? 'weak' : ''} ${chg ? 'changed' : ''}`}>
