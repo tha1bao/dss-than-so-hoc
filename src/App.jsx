@@ -5,7 +5,7 @@ import { getSession, setSession } from './api.js';
 import { ROLE_NAME } from './format.js';
 import { TipProvider } from './components/common.jsx';
 import StudentView from './pages/StudentView.jsx';
-import { Login, StudentList, GuestForm, Admin } from './pages/Pages.jsx';
+import { Login, StudentList, GuestForm, Admin, Home } from './pages/Pages.jsx';
 import { TestRunner, TestReport } from './pages/Usability.jsx';
 import { t, tr, getLang, setLang } from './i18n.js';
 
@@ -99,14 +99,14 @@ export default function App() {
   }, []);
   useEffect(() => { window.scrollTo(0, 0); }, [route.parts.join('/')]);
 
-  const logout = () => { setSession(null); setSess(null); setGuest(null); go('/login'); };
+  const logout = () => { setSession(null); setSess(null); setGuest(null); go('/'); };
   const [p0, p1, p2] = route.parts;
   let page;
   if (p0 === 'guest') {
     if (p1 && guest) page = <StudentView source={{ kind: 'guest', person: guest }} user={null} layer={p1} sel={route.query.get('p')} go={go} />;
     else page = <GuestForm initial={guest} onSubmit={(g) => { setGuest(g); go(`/guest/${p1 || 'l0'}${route.query.get('p') ? `?p=${route.query.get('p')}` : ''}`); }} />;
   } else if (!user) {
-    page = <Login onLogin={(s) => { setSess(s); go(homeFor(s.user)); }} />;
+    page = p0 === 'login' ? <Login onLogin={(s) => { setSess(s); go(homeFor(s.user)); }} /> : <Home />;
   } else if (p0 === 's' && p1) {
     page = <StudentView key={p1} source={{ kind: 'student', id: p1 }} user={user} layer={p2 ?? 'l0'} sel={route.query.get('p')} go={go} />;
   } else if (p0 === 'students' && user.role !== 'student') {
@@ -135,7 +135,7 @@ export default function App() {
           <button type="button" className="btn icon" onClick={cycleTheme} aria-label={t({ auto: 'Giao diện: theo máy', light: 'Giao diện: sáng', dark: 'Giao diện: tối' }[theme])} title={t({ auto: 'Giao diện: theo máy', light: 'Giao diện: sáng', dark: 'Giao diện: tối' }[theme])}>{{ auto: '◐', light: '☀', dark: '☾' }[theme]}</button>
           {user ? (
             <span className="who"><span className="role-chip">{ROLE_NAME[user.role]}</span>{user.displayName}<button type="button" className="btn" onClick={logout}>{t('Đăng xuất')}</button></span>
-          ) : p0 === 'guest' ? <a className="btn" href="#/login">{t('Đăng nhập')}</a> : null}
+          ) : p0 !== 'login' ? <a className="btn" href="#/login">{t('Đăng nhập')}</a> : null}
         </header>
         <main key={lang}>
           <ErrorBoundary key={`${lang}-${route.parts.join('/')}-${route.query.get('p') ?? ''}`}>

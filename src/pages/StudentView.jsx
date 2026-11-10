@@ -9,9 +9,11 @@ import { L1, L2, L3, L4, L5, L6, L7 } from '../components/Layers.jsx';
 import { t, tr, localizeKb } from '../i18n.js';
 
 export const LAYERS = [
-  ['l0', 'Kết quả', 'Results'], ['l1', 'Vì sao?', 'Why?'], ['l2', 'Con số của bạn', 'Your numbers'], ['l3', 'Kết nối', 'Connections'],
-  ['l4', 'Công thức', 'Formulas'], ['l5', 'Bảng xếp hạng', 'Ranking'], ['l6', 'Nguồn', 'Sources'], ['l7', 'Dữ liệu', 'Data'],
+  ['l0', 'Kết quả', 'Results'], ['l1', 'Vì sao hợp?', 'Why it fits'], ['l2', 'Con số của bạn', 'Your numbers'], ['l5', 'Tất cả nhóm ngành', 'All groups'],
+  ['l3', 'Sơ đồ kết nối', 'Connection map'], ['l4', 'Cách tính điểm', 'How it is scored'], ['l6', 'Ý nghĩa & sách nguồn', 'Meanings & sources'], ['l7', 'Dữ liệu & khả năng đỗ', 'Data & admission'],
 ];
+/** Tab chính cho học sinh; 4 tab còn lại gom vào "Tìm hiểu sâu" để không bị ngợp. */
+const MAIN_LAYERS = ['l0', 'l1', 'l2', 'l5'];
 const personaOf = (role) => ({ student: 'HS', parent: 'PH', counselor: 'TVV' }[role] ?? 'TVV');
 const targetFields = (kb, text) => {
   if (!text) return {};
@@ -111,30 +113,30 @@ export default function StudentView({ source, user, layer, sel: selParam, go }) 
         <span className="muted">· {stu.birthYear}{stu.grade ? ` · ${tr('lớp', 'grade')} ${stu.grade}` : ''} · {envName(kbL, stu.preferredEnv)}</span>
       </nav>
 
-      {/* Thanh tầng luôn hiển thị để học sinh chuyển đổi bất kỳ lúc nào */}
+      {/* Thanh điều hướng: 4 tab chính + nhóm "Tìm hiểu sâu"; cuộn ngang trên điện thoại */}
       <nav className="layers" aria-label={t('Tầng giải thích')}>
-        <a href={`#${base0}/l0`} aria-current={layer === 'l0' ? 'page' : undefined}>
-          <small>L0</small> {t('Kết quả')}
-        </a>
-        {LAYERS.slice(1).map(([k, vi, en]) => (
-          <a key={k} href={`#${base0}/${k}?p=${sel}`} aria-current={layer === k ? 'page' : undefined}>
-            <small>{k.toUpperCase()}</small> {tr(vi, en)}
-          </a>
-        ))}
-        {targetMajor && (
-          <a
-            href={`#${base0}/l1?p=${targetMajor.profile_id ?? targetMajor.profile}`}
-            className="target-nav-pill"
-            aria-current={layer !== 'l0' && sel === (targetMajor.profile_id ?? targetMajor.profile) ? 'page' : undefined}
-            title={tr(`Xem chi tiết cho ngành mong muốn: ${targetMajor.name_vi}`, `Details for target major: ${targetMajor.name_vi}`)}
-            onClick={(e) => {
-              e.preventDefault();
-              goLayer('l1', targetMajor.profile_id ?? targetMajor.profile);
-            }}
-          >
-            🎯 {tr('Ngành mong muốn', 'Target major')}: <b>{targetMajor.name_vi}</b>
-          </a>
-        )}
+        <div className="layers-main">
+          {LAYERS.filter(([k]) => MAIN_LAYERS.includes(k)).map(([k, vi, en]) => (
+            <a key={k} href={`#${base0}/${k}${k === 'l0' ? '' : `?p=${sel}`}`} aria-current={layer === k ? 'page' : undefined}>{tr(vi, en)}</a>
+          ))}
+          {targetMajor && (
+            <a
+              href={`#${base0}/l1?p=${targetMajor.profile_id ?? targetMajor.profile}`}
+              className="target-nav-pill"
+              aria-current={layer !== 'l0' && sel === (targetMajor.profile_id ?? targetMajor.profile) ? 'page' : undefined}
+              title={tr(`Xem chi tiết cho ngành mong muốn: ${targetMajor.name_vi}`, `Details for target major: ${targetMajor.name_vi}`)}
+              onClick={(e) => { e.preventDefault(); goLayer('l1', targetMajor.profile_id ?? targetMajor.profile); }}
+            >
+              🎯 {tr('Ngành bạn nhắm', 'Your target')}: <b>{targetMajor.name_vi}</b>
+            </a>
+          )}
+        </div>
+        <div className="layers-deep">
+          <span className="small muted">{tr('Tìm hiểu sâu', 'Go deeper')}:</span>
+          {LAYERS.filter(([k]) => !MAIN_LAYERS.includes(k)).map(([k, vi, en]) => (
+            <a key={k} href={`#${base0}/${k}?p=${sel}`} aria-current={layer === k ? 'page' : undefined}>{tr(vi, en)}</a>
+          ))}
+        </div>
       </nav>
 
       {layer === 'l0' && <Dashboard out={out} base={base} kb={kbL} onGo={goLayer} whatif={whatif} base0={base0} />}

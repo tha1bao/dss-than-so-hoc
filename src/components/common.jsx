@@ -115,3 +115,52 @@ export function LabelDistribution({ rows }) {
     </div>
   );
 }
+
+// ---------- thanh 3 phần cho học sinh (không ký hiệu) ----------
+/**
+ * Thanh chia 3 màu: Môi trường · Kỹ năng · Con số. Mỗi phần có "khung tối đa" (nền nhạt) và "phần đạt được" (màu đậm),
+ * để học sinh thấy ngay phần nào đã đủ, phần nào còn thiếu – thay cho công thức C = α·NF* + β·SR* + γ·ENV*.
+ */
+export function FitStack({ row, weights }) {
+  if (!row?.contrib) return null;
+  const [a, b, g] = weights ?? [0.111, 0.278, 0.611];
+  const parts = [
+    ['ENV', 'env', tr('Môi trường', 'Environment'), g],
+    ['SR', 'sr', tr('Kỹ năng', 'Skills'), b],
+    ['NF', 'nf', tr('Con số', 'Numbers'), a],
+  ];
+  return (
+    <div className="fitstack" role="img" aria-label={parts.map(([k, , n, mx]) => `${n} ${Math.round(row.contrib[k] * 100)}/${Math.round(mx * 100)}`).join(', ')}>
+      <div className="fitstack-track">
+        {parts.map(([k, cls, , mx]) => (
+          <div key={k} className={`fitstack-slot ${cls}`} style={{ flex: `${mx} 0 0` }}>
+            <div className="fitstack-fill" style={{ width: `${mx > 0 ? Math.min(1, row.contrib[k] / mx) * 100 : 0}%` }} />
+          </div>
+        ))}
+      </div>
+      <div className="fitstack-legend">
+        {parts.map(([k, cls, n, mx]) => (
+          <span key={k}><i className={cls} />{n}: <b className="num">{Math.round(row.contrib[k] * 100)}</b>/{Math.round(mx * 100)}</span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ---------- từ điển nhỏ: chạm / rê chuột để xem nghĩa ----------
+export const GLOSSARY = {
+  'Thần số học': ['Cách đọc tính cách qua các con số tính từ họ tên và ngày sinh. Chỉ để tham khảo, không có giá trị dự báo khoa học.', 'Reading personality from numbers derived from your name and birth date. For reflection only – no scientific predictive value.'],
+  Pythagoras: ['Trường phái thần số học phổ biến nhất (phương Tây): đổi chữ cái thành số 1–9 và cộng các chữ số.', 'The most common (Western) school: letters become 1–9 and digits are added up.'],
+  Kabala: ['Trường phái thần số học gốc Do Thái: tính theo âm của chữ cái và theo thứ trong tuần bạn sinh ra.', 'A Hebrew-rooted school: uses letter sounds and the weekday you were born.'],
+  'Vệ Đà': ['Trường phái thần số học Ấn Độ: dùng ngày sinh trong tháng.', 'The Indian (Vedic) school: uses your day of birth.'],
+  'Số chủ đạo': ['Con số quan trọng nhất, tính bằng cách cộng tất cả chữ số của ngày, tháng, năm sinh.', 'The most important number: add all digits of your full birth date.'],
+  'Nét tính cách': ['Mỗi nhóm ngành gắn với 3 nét tính cách (đánh số 1–9, 11, 22, 33). Con số của bạn trùng nét nào thì cộng điểm nét đó.', 'Each major group is tied to 3 personality traits (1–9, 11, 22, 33). A number of yours that matches a trait adds points.'],
+  'Nhóm ngành': ['Hệ thống gom 300 ngành thành 35 nhóm có cùng nét tính cách và môi trường làm việc.', 'The 300 majors are grouped into 35 groups sharing traits and work environment.'],
+};
+export function Term({ k, children }) {
+  const tip = useTip();
+  const def = GLOSSARY[k];
+  if (!def) return <>{children ?? k}</>;
+  const text = tr(def[0], def[1]);
+  return <abbr className="term" tabIndex={0} title={text} {...tip(text)}>{children ?? k}</abbr>;
+}

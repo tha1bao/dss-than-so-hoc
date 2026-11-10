@@ -120,3 +120,24 @@ describe('Layers and plain text helper safety', () => {
   });
 });
 
+
+describe('Câu giải thích không tự mâu thuẫn (bản dễ hiểu v4)', () => {
+  const sig = computeSignals('Nguyễn Minh Anh', '2010-01-01', kb);
+  const skills = Object.fromEntries([1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 22, 33].map((a) => [a, 3]));
+  skills[3] = 5; skills[5] = 4;
+  const r = score(sig.arch, skills, kb.profiles[0].env, [3, 5, 1], kb, { persona: 'HS' });
+  it('không còn câu ghép cố định "chỉ có 1 con số phụ" và "gần như tối đa"', () => {
+    for (const row of r.rows) {
+      const n = buildNarrativeWhy(row, { sig, result: r }, kb);
+      expect(n.formulaDetailNF).not.toMatch(/chỉ có 1 con số phụ/);
+      expect(n.formulaDetailSR).not.toMatch(/gần như tối đa/);
+      if (row.EC >= 1) expect(n.formulaDetailNF).toContain(`${row.EC}/`);
+      if (row.EC >= 1 && row.NF_n >= 1 - 1e-9) expect(n.formulaDetailNF).toMatch(/cao nhất/);
+      expect(n.skillAvgNote).toMatch(/trọng số/);
+    }
+  });
+  it('mức khớp thực = C_raw × 100 cho nhóm được xếp hạng', () => {
+    const top = r.ranked[0];
+    expect(buildNarrativeWhy(top, { sig, result: r }, kb).rawFit).toBe(Math.round(top.C_raw * 100));
+  });
+});

@@ -2,15 +2,27 @@
 // · ngành phù hợp khác (xếp hạng Top-4) · 3 chỉ số + cảnh báo · Thử thay đổi (What-if).
 import { useState, useMemo } from 'react';
 import { skillName, fmt, envName } from '../format.js';
-import { Status, LabelChip, Warnings } from './common.jsx';
+import { Status, LabelChip, Warnings, FitStack } from './common.jsx';
 import WhatIf from './WhatIf.jsx';
 import { t, tr } from '../i18n.js';
-import { pct, repMajor, insightLine, nextStepPlain, stabWord, avgSkill, SKILL_NEED, buildNarrativeWhy } from '../plain.js';
+import { pct, repMajor, insightLine, nextStepPlain, stabWord, avgSkill, SKILL_NEED, buildNarrativeWhy, labelRankNote, groupMajorNames } from '../plain.js';
 import { admissionChance } from '../../shared/engine/kpi.js';
 
 const link = (fn) => (e) => { e.preventDefault(); fn(); };
-const PCT_NOTE = () => tr('so với các ngành khác của bạn', 'compared with your other majors');
-const PCT_TIP = () => tr('Mức phù hợp tương đối: chỉ so sánh các ngành của chính bạn, không phải xác suất thành công.', 'Relative fit: only compares your own majors – not a probability of success.');
+const PCT_NOTE = () => tr('điểm so sánh giữa 35 nhóm ngành của bạn', 'comparison score across your 35 major groups');
+const PCT_TIP = () => tr('Điểm so sánh: ngành hợp nhất của bạn luôn được 100%, các ngành khác được chấm so với ngành đó. Đây không phải xác suất thành công hay khả năng đỗ.', 'Comparison score: your best-fit group is always 100% and the others are scored against it. It is not a probability of success or of admission.');
+
+/** "+N ngành cùng nhóm" → bấm để xem đó là những ngành nào. */
+export function GroupMajors({ kb, profile, more }) {
+  if (!more) return null;
+  const names = groupMajorNames(kb, profile);
+  return (
+    <details className="group-majors">
+      <summary className="small muted">+{more} {tr('ngành cùng nhóm', 'more in this group')}</summary>
+      <p className="small">{names.join(' · ')}</p>
+    </details>
+  );
+}
 
 function WhyBtn({ onClick }) {
   return <button type="button" className="why-btn" onClick={onClick}>{t('Vì sao?')}</button>;
@@ -39,14 +51,14 @@ function WhyDrawer({ out, kb, profile, base0, onClose, onSwitchProfile, onGo }) 
   };
 
   return (
-    <div className="drawer-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-label="Giải thích vì sao">
+    <div className="drawer-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-label={tr('Giải thích vì sao', 'Why explanation')}>
       <div className="drawer-panel" onClick={(e) => e.stopPropagation()}>
         <div className="drawer-head">
           <div>
             <span className="eyebrow">{tr('Giải thích nhanh', 'Quick explanation')}</span>
             <h3>{m.name} <LabelChip label={row.label} /></h3>
           </div>
-          <button type="button" className="drawer-close-btn" onClick={onClose} aria-label="Đóng">✕</button>
+          <button type="button" className="drawer-close-btn" onClick={onClose} aria-label={tr('Đóng', 'Close')}>✕</button>
         </div>
 
         {targetMajor && targetProfile !== row.profile && (
@@ -61,8 +73,10 @@ function WhyDrawer({ out, kb, profile, base0, onClose, onSwitchProfile, onGo }) 
         <div className="drawer-body">
           <div className="drawer-pct-box">
             <span className="big-pct num">{row.EC >= 1 ? pct(row.C) : '—'}</span>
-            <span className="small muted">{row.rank ? `${tr('Xếp hạng', 'Rank')} #${row.rank}` : tr('Không xếp hạng', 'Unranked')}</span>
+            <span className="small muted">{row.rank ? `${tr('Xếp hạng', 'Rank')} #${row.rank}/${result.ranked.length}` : tr('Không xếp hạng', 'Unranked')} · {PCT_NOTE()}</span>
           </div>
+          <GroupMajors kb={kb} profile={row.profile} more={m.more} />
+          <FitStack row={row} weights={result.weights} />
 
           <div className="drawer-section">
             <h4>{tr('3 Yếu tố đóng góp vào điểm số:', '3 Factors contributing to score:')}</h4>
@@ -80,6 +94,7 @@ function WhyDrawer({ out, kb, profile, base0, onClose, onSwitchProfile, onGo }) 
               <span className="factor-label">{tr('Kỹ năng tự đánh giá', 'Self-rated skills')}:</span>
               <span className="factor-desc">
                 <b>{fmt(avgSkill(row.SR), 1)}/5</b> ({tr('mức chuẩn', 'bar')}: {fmt(SKILL_NEED(kb), 1)}/5)
+                <span className="small muted" style={{ display: 'block', fontSize: '0.74rem', marginTop: 1 }}>{narrative?.skillAvgNote}</span>
                 <span className="factor-pct"> (+{narrative?.pctSR ?? 0}%)</span>
                 <span className="small muted" style={{ display: 'block', fontSize: '0.74rem', marginTop: 1 }}>
                   {tr(`Đạt ${narrative?.pctSR ?? 0}% (trên tối đa ${narrative?.maxPtsSR ?? 0}% của góc nhìn ${narrative?.personaName})`, `Earns ${narrative?.pctSR ?? 0}% (out of max ${narrative?.maxPtsSR ?? 0}%)`)}
@@ -125,10 +140,10 @@ function WhyDrawer({ out, kb, profile, base0, onClose, onSwitchProfile, onGo }) 
               style={{ textAlign: 'center', textDecoration: 'none' }}
               onClick={handleOpenFull}
             >
-              {tr('Mở toàn màn hình xem chi tiết (Tab L1–L7) ↗', 'Open full detailed view (Tab L1–L7) ↗')}
+              {tr('Xem giải thích đầy đủ →', 'See the full explanation →')}
             </a>
             <button type="button" className="btn small ghost" onClick={onClose}>
-              {tr('✕ Đóng để tiếp tục thử What-if', '✕ Close to continue What-if')}
+              {tr('✕ Đóng', '✕ Close')}
             </button>
           </div>
         </div>
@@ -155,23 +170,25 @@ function TopCard({ out, base, kb, base0, onOpenWhy }) {
         <h2 id="z-top">{m.name}</h2>
         <div className="answer-meta">
           <LabelChip label={top.label} />
-          {m.more > 0 && <span className="muted small">+{m.more} {tr('ngành cùng nhóm', 'more in this group')}</span>}
           {cDiff !== 0 && (
             <span className={`delta-badge ${cDiff > 0 ? 'up' : 'down'}`}>
               {cDiff > 0 ? `▲ +${cDiff}%` : `▼ ${cDiff}%`}
             </span>
           )}
         </div>
+        <GroupMajors kb={kb} profile={top.profile} more={m.more} />
         <p className="answer-why">{insightLine(top, result, kb)}</p>
+        <FitStack row={top} weights={result.weights} />
         {tie && <p className="small muted">{tr(`Ngang điểm với ${result.tiesWithTop1.map((p) => repMajor(kb, p, result.env).name).join(', ')}.`, `Tied with ${result.tiesWithTop1.map((p) => repMajor(kb, p, result.env).name).join(', ')}.`)}</p>}
         {best && <p className="best-note">{tr('Lựa chọn "Ưu tiên" tốt nhất', 'Best "Priority" option')}: <b>{repMajor(kb, best.profile, result.env).name}</b> ({pct(best.C)}) <button type="button" className="btn ghost small" onClick={() => onOpenWhy(best.profile)}>{t('Vì sao?')}</button></p>}
       </div>
       <div className="answer-pct" title={PCT_TIP()}>
         <span className="big-pct num">{pct(top.C)}</span>
         <span className="pct-note">{PCT_NOTE()}</span>
+        {top.C_raw != null && <span className="pct-raw" title={tr('Mức khớp thực = tổng điểm 3 phần trước khi so sánh giữa các ngành (thang 0–100).', 'Actual match = sum of the 3 parts before comparing groups (0–100 scale).')}>{tr('Mức khớp thực', 'Actual match')}: <b className="num">{Math.round(top.C_raw * 100)}</b>/100</span>}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, marginTop: 4 }}>
           <WhyBtn onClick={() => onOpenWhy(top.profile)} />
-          <a href={`#${base0}/l1?p=${top.profile}`} className="small muted" style={{ fontSize: '0.74rem' }}>{tr('Xem chi tiết L1–L7 ↗', 'Full details ↗')}</a>
+          <a href={`#${base0}/l1?p=${top.profile}`} className="small muted" style={{ fontSize: '0.74rem' }}>{tr('Xem giải thích đầy đủ →', 'Full explanation →')}</a>
         </div>
       </div>
     </section>
@@ -213,7 +230,7 @@ export function OtherMajors({ out, base, kb, base0, onOpenWhy, onGo, onSetTarget
     <>
       <div className="panel-head">
         <h2>{tr('Ngành phù hợp khác', 'Other good fits')}</h2>
-        <a href={`#${base0}/l5`} className="small">{tr('Xem bảng xếp hạng đầy đủ (L5) →', 'See full ranking (L5) →')}</a>
+        <a href={`#${base0}/l5`} className="small">{tr('Xem cả 35 nhóm ngành →', 'See all 35 groups →')}</a>
       </div>
       {rest.length ? (
         <ol className="mlist">
@@ -225,6 +242,7 @@ export function OtherMajors({ out, base, kb, base0, onOpenWhy, onGo, onSetTarget
       ) : (
         <p className="small muted">{tr('Không có ngành nào khác được xếp hạng.', 'No other majors are ranked.')}</p>
       )}
+      {labelRankNote(ranked.slice(0, 4)) && <p className="small muted note-box">ℹ️ {labelRankNote(ranked.slice(0, 4))}</p>}
 
       {/* Khối ngành mục tiêu (Chuyên ngành mong muốn) */}
       <div className="target-box">
@@ -270,7 +288,7 @@ export function OtherMajors({ out, base, kb, base0, onOpenWhy, onGo, onSetTarget
         {target?.major && target?.benchmark && (
           <div className="adm-box-inline">
             <span className="small">
-              {tr('Khảo sát điểm chuẩn 2026 (HaUI):', '2026 Admission benchmark (HaUI):')}{' '}
+              {tr('Điểm chuẩn 2026 (ĐH Công nghiệp Hà Nội):', '2026 cut-off (Hanoi Univ. of Industry):')}{' '}
               {admDetail ? (
                 <>
                   <b>{t(admDetail.level)}</b> ({tr('Tổ hợp', 'Combo')} {admDetail.combo}: {fmt(admDetail.score, 2)}đ vs {fmt(admDetail.cutoff, 2)}đ, {admDetail.margin >= 0 ? `dư +${fmt(admDetail.margin, 2)}` : `thiếu ${fmt(admDetail.margin, 2)}`}đ)
@@ -287,7 +305,7 @@ export function OtherMajors({ out, base, kb, base0, onOpenWhy, onGo, onSetTarget
 
         {target?.major && !target?.benchmark && (
           <p className="small muted" style={{ marginTop: 2 }}>
-            ℹ️ {tr('Ngành này chưa nằm trong 18 ngành thí điểm điểm chuẩn 2026 (HaUI). Điểm thi tốt nghiệp của bạn đã sẵn sàng đối chiếu khi cập nhật thêm trường.', 'This major is not among the 18 pilot benchmark majors. Your exam scores are ready for future updates.')}
+            ℹ️ {tr('Hệ thống mới có điểm chuẩn của 18 ngành tại Trường ĐH Công nghiệp Hà Nội; ngành này chưa nằm trong danh sách nên chưa so được khả năng đỗ.', 'Cut-offs are only available for 18 majors at Hanoi University of Industry; this major is not among them yet.')}
           </p>
         )}
 
@@ -327,9 +345,9 @@ function Indicators({ out, kb, onGo, onSetTarget }) {
   } else {
     admDisplay = {
       level: 'grey',
-      val: tr('Thí điểm 18 ngành', '18-major pilot'),
-      sub: top1Rep ? top1Rep.name : tr('Chưa chọn ngành', 'No target'),
-      tip: tr('Ngành này chưa có trong 18 ngành khảo sát điểm chuẩn ĐH Công nghiệp HN (HaUI)', 'Not among 18 pilot majors from HaUI'),
+      val: tr('Chưa có dữ liệu', 'No data yet'),
+      sub: tr('Mới có điểm chuẩn 18 ngành của ĐH Công nghiệp Hà Nội', 'Only 18 majors of Hanoi Univ. of Industry have cut-offs'),
+      tip: tr('Hệ thống mới có điểm chuẩn của 18 ngành tại Trường ĐH Công nghiệp Hà Nội (HaUI). Ngành của bạn chưa nằm trong danh sách này.', 'Cut-off scores are only available for 18 majors at Hanoi University of Industry (HaUI); yours is not among them.'),
     };
   }
 
