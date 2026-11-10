@@ -1674,3 +1674,31 @@ a.btn { text-decoration: none; display: inline-block; }
 @media (max-width: 600px) { .wi-row { grid-template-columns: minmax(0, 1fr); gap: 4px; } }
 .sk-row { min-width: 0; }
 .sk-header .sk-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+
+/* ---------- đăng ký ---------- */
+.reg { max-width: 720px; margin: 8px auto; display: grid; gap: 12px; }
+.reg .panel { display: grid; gap: 10px; }
+.reg-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.reg-body { display: grid; gap: 10px; }
+.reg-2col { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 560px) { .reg-2col { grid-template-columns: minmax(0, 1fr); } }
+.reg .field input, .reg .field select { width: 100%; padding: 9px 10px; }
+.role-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 6px; }
+@media (max-width: 640px) { .role-cards { grid-template-columns: minmax(0, 1fr); } }
+.role-card { display: grid; gap: 4px; align-content: start; text-align: left; padding: 14px; border: 1.5px solid var(--line); border-radius: var(--radius-l); background: var(--surface); color: var(--ink); cursor: pointer; font: inherit; }
+.role-card:hover, .role-card:focus-visible { border-color: var(--c-sr); }
+.role-ic { font-size: 1.6rem; }
+.consent { display: flex; gap: 8px; align-items: flex-start; padding: 8px 10px; border: 1px dashed var(--line); border-radius: var(--radius-s); cursor: pointer; }
+.consent input { margin-top: 3px; flex: 0 0 auto; }
+.consent.missing { border-color: var(--bad, #d33); }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0.04em; }
+.linkcode { position: relative; }
+.linkcode > summary { list-style: none; cursor: pointer; }
+.linkcode > summary::-webkit-details-marker { display: none; }
+.linkcode-pop { position: absolute; right: 0; top: calc(100% + 6px); z-index: 30; width: min(320px, 86vw); display: grid; gap: 6px; box-shadow: 0 8px 24px rgba(0,0,0,.25); }
+.linkcode-dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; margin: 4px 0; }
+.linkcode-dl dt { color: var(--ink-2); font-size: 0.8rem; }
+.linkcode-dl dd { margin: 0; }
+.linkcode-dl dd.big { font-size: 1.3rem; font-weight: 700; }
+.field > label { font-weight: 600; }
+.reg-2col { align-items: start; }

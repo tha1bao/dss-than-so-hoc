@@ -9,7 +9,7 @@ export function setSession(s) {
 }
 
 export class ApiError extends Error {
-  constructor(status, message, requestId) { super(message); this.status = status; this.requestId = requestId; }
+  constructor(status, message, requestId, fields) { super(message); this.status = status; this.requestId = requestId; this.fields = fields ?? null; }
 }
 
 export async function api(path, { method = 'GET', body } = {}) {
@@ -23,7 +23,7 @@ export async function api(path, { method = 'GET', body } = {}) {
   try { data = await res.json(); } catch { /* không phải JSON */ }
   if (!res.ok) {
     if (res.status === 401 && s) { setSession(null); window.dispatchEvent(new Event('dss:logout')); }
-    throw new ApiError(res.status, data?.error ?? `Lỗi ${res.status}`, data?.requestId);
+    throw new ApiError(res.status, data?.error ?? `Lỗi ${res.status}`, data?.requestId, data?.fields);
   }
   return data;
 }
