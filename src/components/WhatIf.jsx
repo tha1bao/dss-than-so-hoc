@@ -5,6 +5,7 @@ import { SKILL_ARCHS } from '../../shared/engine/index.js';
 import { skillName, envName, PERSONA_NAME } from '../format.js';
 import { t, tr } from '../i18n.js';
 import { pct, repMajor } from '../plain.js';
+import { skillPlain } from '../data/plain_inputs.js';
 
 const Seg = ({ value, options, onChange, label }) => (
   <div className="seg" role="group" aria-label={label}>
@@ -19,6 +20,20 @@ const RUBRIC = [
   [4, 'Tự tin / Thành thạo', 'Làm tốt, chủ động và có thể hướng dẫn bạn bè.', 'Confident / Proficient'],
   [5, 'Xuất sắc / Đam mê', 'Thế mạnh vượt trội, tự học nâng cao hoặc có giải thưởng.', 'Master / Passionate'],
 ];
+/** Giải thích bằng lời: mỗi góc nhìn coi trọng 3 yếu tố khác nhau (lấy từ trọng số thật của bộ A). */
+function PersonaHint({ kb, persona }) {
+  const w = kb.weights?.[kb.paramSet?.code ?? 'A']?.[persona] ?? kb.weights?.A?.[persona];
+  if (!w) return null;
+  const [a, b, g] = w.map((x) => Math.round(x * 100));
+  const who = { HS: tr('học sinh', 'students'), PH: tr('phụ huynh', 'parents'), TVV: tr('tư vấn viên', 'counselors') }[persona] ?? persona;
+  return (
+    <p className="small muted wi-hint">
+      {tr(`Góc nhìn ${who} chấm điểm theo tỉ lệ: Môi trường ${g}% · Kỹ năng ${b}% · Con số ${a}%. Đổi góc nhìn để xem bố mẹ hoặc thầy cô – những người coi trọng các yếu tố khác nhau – sẽ thấy kết quả ra sao.`,
+        `The ${who} view weighs: Environment ${g}% · Skills ${b}% · Numbers ${a}%. Switch views to see how parents or counselors, who value things differently, would see your results.`)}
+    </p>
+  );
+}
+
 const LEVEL_SHORT = ['', 'Yếu', 'Cần kèm', 'Cơ bản', 'Thành thạo', 'Xuất sắc'];
 
 export default function WhatIf({ kb, out, base, opt, setOpt, person, target, setTarget, onReset, onSave, saveState, canSave, dirty }) {
@@ -61,6 +76,7 @@ export default function WhatIf({ kb, out, base, opt, setOpt, person, target, set
         <span className="wi-label">{t('Góc nhìn')}</span>
         <Seg label={t('Góc nhìn')} value={opt.persona} onChange={(v) => set({ persona: v })} options={Object.entries(PERSONA_NAME)} />
       </div>
+      <PersonaHint kb={kb} persona={opt.persona} />
       <label className="wi-row">
         <span className="wi-label">{t('Môi trường')}</span>
         <select value={opt.envOverride ?? ''} onChange={(e) => set({ envOverride: e.target.value || undefined })}>
@@ -94,7 +110,7 @@ export default function WhatIf({ kb, out, base, opt, setOpt, person, target, set
         </div>
 
         {showRubric && (
-          <div className="rubric-box" role="region" aria-label="Tiêu chuẩn chấm kỹ năng">
+          <div className="rubric-box" role="region" aria-label={tr('Tiêu chuẩn chấm kỹ năng', 'Skill rating rubric')}>
             <b className="small">{tr('Hướng dẫn tự chấm kỹ năng (thang 1–5):', 'Self-rating rubric (1–5 scale):')}</b>
             <ul className="rubric-list">
               {RUBRIC.map(([lvl, title, desc, titleEn]) => (
@@ -112,7 +128,7 @@ export default function WhatIf({ kb, out, base, opt, setOpt, person, target, set
             const orig = person.skills[a];
             const chg = delta[a] ?? 0;
             const now = Math.max(1, Math.min(5, orig + chg));
-            const nm = skillName(kb, a);
+            const nm = skillPlain(a)?.name ?? skillName(kb, a);
             const isWeak = now <= kb.params.Weak_max;
             return (
               <div key={a} className={`sk-row ${isWeak ? 'weak' : ''} ${chg ? 'changed' : ''}`}>
@@ -124,7 +140,7 @@ export default function WhatIf({ kb, out, base, opt, setOpt, person, target, set
                     {chg < 0 && <span className="diff-tag down">{chg}</span>}
                   </span>
                 </div>
-                <div className="sk-rating-bar" role="radiogroup" aria-label={`${nm}: chọn từ 1 đến 5`}>
+                <div className="sk-rating-bar" role="radiogroup" aria-label={tr(`${nm}: chọn từ 1 đến 5`, `${nm}: choose 1 to 5`)}>
                   <button type="button" className="sk-step-btn" aria-label={`${tr('Giảm', 'Decrease')} ${nm}`} onClick={() => setDelta(a, -1)} disabled={now <= 1}>−</button>
                   <div className="sk-pills">
                     {[1, 2, 3, 4, 5].map((val) => (

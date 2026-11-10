@@ -39,7 +39,7 @@ export function susGrade(score) {
 export const TASKS = {
   student: { account: 'sim-hs001', list: [
     { no: 1, tc: 'TC01', q: 'Q1', text: 'Bạn là học sinh SIM-HS001. Hãy cho biết nhóm ngành được gợi ý đứng đầu và mức khuyến nghị của nó.', answer: 'Xử lý ngôn ngữ tự nhiên – 92%, nhãn Cân nhắc (ngang điểm với Quản trị khách sạn 92%; hòa thì nhóm đứng trước xếp trên) [nhóm P06]' },
-    { no: 2, tc: 'TC02', q: 'Q1', text: 'Vì sao nhóm ngành đó đứng đầu? Phần nào đóng góp nhiều nhất vào điểm của nó?', answer: 'Phần "Môi trường" đóng góp lớn nhất; bấm "Vì sao?" dưới % (L1)' },
+    { no: 2, tc: 'TC02', q: 'Q1', text: 'Vì sao nhóm ngành đó đứng đầu? Phần nào đóng góp nhiều nhất vào điểm của nó?', answer: 'Phần "Môi trường" đóng góp lớn nhất; bấm "Vì sao?" dưới % (tab "Vì sao hợp?")' },
     { no: 3, tc: 'TC05', q: 'Q2', text: 'Bạn muốn học ngành mục tiêu "Công nghệ sinh học". Hệ thống nói gì về ngành này, và nếu tăng kỹ năng yếu nhất thêm 1 bậc thì có thay đổi không?', answer: 'Công nghệ sinh học: Không đề xuất (không con số nào trùng, cảnh báo đỏ); tăng kỹ năng "Phân tích sâu, quan sát, nghiên cứu, tự học" vẫn không đổi [ngành 204, nhóm P17, EC = 0]' },
   ] },
   parent: { account: 'sim-ph001', list: [
@@ -49,8 +49,8 @@ export const TASKS = {
   ] },
   counselor: { account: 'sim-tvv01', list: [
     { no: 1, tc: 'TC08', q: 'Q1', text: 'Trong danh sách học sinh bạn phụ trách, có bao nhiêu em có Top-1 là "Thử thách"? Kể tên một em.', answer: 'Lọc nhãn Thử thách → 1 em: SIM-HS051 (trong 8 em phụ trách)' },
-    { no: 2, tc: 'TC09', q: 'Q1', text: 'Với SIM-HS001, Top-1 có giống nhau theo góc nhìn Học sinh, Phụ huynh và Tư vấn viên không?', answer: 'Có – cả 3 góc nhìn đều ra Xử lý ngôn ngữ tự nhiên (L5 "Kết quả có chắc không?"); độ ổn định 5/5 = rất chắc chắn' },
-    { no: 3, tc: 'TC10', q: null, text: 'Ý nghĩa của số chủ đạo của SIM-HS001 lấy từ sách nào, trang nào?', answer: 'Số chủ đạo 2 → L6: Phillips ch.7 (PDF p.68–69) + Lê Đỗ Quỳnh Hương, Con số chủ đạo 2 (PDF p.25–27)' },
+    { no: 2, tc: 'TC09', q: 'Q1', text: 'Với SIM-HS001, Top-1 có giống nhau theo góc nhìn Học sinh, Phụ huynh và Tư vấn viên không?', answer: 'Có – cả 3 góc nhìn đều ra Xử lý ngôn ngữ tự nhiên (tab "Tất cả nhóm ngành" › "Kết quả có chắc không?"); độ ổn định 5/5 = rất chắc chắn' },
+    { no: 3, tc: 'TC10', q: null, text: 'Ý nghĩa của số chủ đạo của SIM-HS001 lấy từ sách nào, trang nào?', answer: 'Số chủ đạo 2 → tab "Ý nghĩa & sách nguồn": Phillips ch.7 (PDF p.68–69) + Lê Đỗ Quỳnh Hương, Con số chủ đạo 2 (PDF p.25–27)' },
   ] },
 };
 TASKS.teacher = TASKS.student; // giảng viên / người đánh giá đóng vai học sinh

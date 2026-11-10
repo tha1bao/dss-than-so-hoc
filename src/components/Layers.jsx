@@ -5,11 +5,11 @@ import { GROUPS, targetAnalysis, alphaSweep, computeExtras, LABELS } from '../..
 import { explainProfile } from '../../shared/engine/view.js';
 import { getLayer } from '../api.js';
 import { fmt, envName, groupName, skillName, PERSONA_NAME, archTrait } from '../format.js';
-import { LabelChip, Warnings, LabelDistribution } from './common.jsx';
+import { LabelChip, Warnings, LabelDistribution, FitStack, Term } from './common.jsx';
 import { Tex, tn, tt } from './Tex.jsx';
 import { t, tr, num, getLang } from '../i18n.js';
 import { getMeaningVi } from '../data/number_meanings_vi.js';
-import { pct, repMajor, avgSkill, SKILL_NEED, labelPlain, nextStepPlain, STAB_NAME, stabWord, py00Chain, rootChain, chainText, buildNarrativeWhy } from '../plain.js';
+import { pct, repMajor, avgSkill, SKILL_NEED, labelPlain, nextStepPlain, STAB_NAME, stabWord, py00Chain, rootChain, chainText, buildNarrativeWhy, labelRankNote, groupMajorNames } from '../plain.js';
 
 const WEEKDAY_VI = ['', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy', 'Chủ nhật'];
 const WEEKDAY_EN = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -22,25 +22,33 @@ const SIG_NAME = {
   G5: ['Số tên đầy đủ', 'Full-name number', 'từ họ tên · Pythagoras', 'from name · Pythagoras'],
   G6: ['Số tên Kabala', 'Kabbalah name number', 'từ họ tên · Kabala', 'from name · Kabbalah'],
 };
+const PLANET_VI = { Sun: 'Mặt Trời', Moon: 'Mặt Trăng', Mercury: 'Sao Thủy', Venus: 'Sao Kim', Mars: 'Sao Hỏa', Jupiter: 'Sao Mộc', Saturn: 'Sao Thổ', Uranus: 'Sao Thiên Vương', Neptune: 'Sao Hải Vương' };
+/** Bỏ ghi chú nội bộ còn sót trong dữ liệu nguồn (vd. "summary to be refined…") trước khi hiển thị. */
+const cleanNote = (x) => String(x ?? '').replace(/\s*[;,–-]?\s*summary to be refined[^·;]*/gi, '').trim();
+/** "từ ngày sinh · Pythagoras" → bọc tên trường phái bằng từ điển nhỏ. */
+function SchoolTerm({ text }) {
+  const parts = String(text).split(/(Pythagoras|Kabala|Vệ Đà)/);
+  return <>{parts.map((x, i) => (['Pythagoras', 'Kabala', 'Vệ Đà'].includes(x) ? <Term key={i} k={x} /> : x))}</>;
+}
 const sigName = (g) => tr(SIG_NAME[g][0], SIG_NAME[g][1]);
 const COMP = [['NF', 'nf', 'Con số của bạn', 'Your numbers'], ['SR', 'sr', 'Kỹ năng', 'Skills'], ['ENV', 'env', 'Môi trường', 'Environment']];
 
 const ARROW_VI = {
   'Arrow of the Planner': 'Thế mạnh: Lập kế hoạch & Tổ chức',
   'Arrow of Will': 'Thế mạnh: Ý chí & Nghị lực',
-  'Arrow of Frustration': 'Vùng rèn luyện (do ngày sinh khuyết dãy 4-5-6): Tính kiên nhẫn & Vượt khó',
+  'Arrow of Frustration': 'Gợi ý phát triển (ngày sinh không có dãy 4-5-6): Tính kiên nhẫn & Vượt khó',
   'Arrow of Activity': 'Thế mạnh: Năng động & Nhiệt huyết',
-  'Arrow of Passivity': 'Vùng rèn luyện (do ngày sinh khuyết dãy 7-8-9): Tinh thần chủ động & Dấn thân',
+  'Arrow of Passivity': 'Gợi ý phát triển (ngày sinh không có dãy 7-8-9): Tinh thần chủ động & Dấn thân',
   'Arrow of Practicality': 'Thế mạnh: Thực tế & Khéo léo',
-  'Arrow of Disorder': 'Vùng rèn luyện (do ngày sinh khuyết dãy 1-4-7): Kỷ luật & Ngăn nắp',
+  'Arrow of Disorder': 'Gợi ý phát triển (ngày sinh không có dãy 1-4-7): Kỷ luật & Ngăn nắp',
   'Arrow of Emotional Balance': 'Thế mạnh: Cân bằng cảm xúc',
-  'Arrow of Hypersensitivity': 'Vùng rèn luyện (do ngày sinh khuyết dãy 2-5-8): Cân bằng cảm xúc & Giảm âu lo',
+  'Arrow of Hypersensitivity': 'Gợi ý phát triển (ngày sinh không có dãy 2-5-8): Cân bằng cảm xúc & Giảm âu lo',
   'Arrow of Intellect': 'Thế mạnh: Tư duy logic & Sáng dạ',
-  'Arrow of Poor Memory': 'Vùng rèn luyện (do ngày sinh khuyết dãy 3-6-9): Phương pháp ghi nhớ & Tập trung',
+  'Arrow of Poor Memory': 'Gợi ý phát triển (ngày sinh không có dãy 3-6-9): Phương pháp ghi nhớ & Tập trung',
   'Arrow of Determination': 'Thế mạnh: Quyết tâm & Kiên định',
-  'Arrow of Procrastination': 'Vùng rèn luyện (do ngày sinh khuyết dãy 1-5-9): Quyết đoán & Tránh chần chừ',
+  'Arrow of Procrastination': 'Gợi ý phát triển (ngày sinh không có dãy 1-5-9): Quyết đoán & Tránh chần chừ',
   'Arrow of Spirituality': 'Thế mạnh: Trực giác & Nhạy cảm tinh thần',
-  'Arrow of Scepticism': 'Vùng rèn luyện (do ngày sinh khuyết dãy 3-5-7): Sự cởi mở & Lòng tin vào bản thân',
+  'Arrow of Scepticism': 'Gợi ý phát triển (ngày sinh không có dãy 3-5-7): Sự cởi mở & Lòng tin vào bản thân',
 };
 
 function formatArrow(arrStr) {
@@ -85,7 +93,7 @@ function Head({ out, kb, row, setSel, children }) {
     <div className="lhead">
       <div>
         <h2>{m.name} <LabelChip label={row.label} /></h2>
-        <span className="small muted">{m.more > 0 ? tr(`và ${m.more} ngành cùng nhóm`, `and ${m.more} more in this group`) : ''}{children}</span>
+        <span className="small muted">{m.more > 0 ? <details className="group-majors inline"><summary>{tr(`và ${m.more} ngành cùng nhóm`, `and ${m.more} more in this group`)}</summary><span className="small">{groupMajorNames(kb, row.profile).join(' · ')}</span></details> : ''}{children}</span>
       </div>
       <ProfilePicker out={out} kb={kb} sel={row.profile} setSel={setSel} />
     </div>
@@ -122,20 +130,15 @@ export function L1({ out, kb, sel, setSel }) {
       {/* Hero Banner: Tổng kết mức phù hợp */}
       <div className="l1-hero-banner">
         <div className="l1-hero-left">
-          <div className="l1-hero-title-row">
-            <h2 className="l1-hero-major">{narrative?.majorName ?? row.profile}</h2>
-            <LabelChip label={row.label} />
-            {narrative?.moreCount > 0 && (
-              <span className="small muted">+{narrative.moreCount} {tr('ngành cùng nhóm', 'majors in group')}</span>
-            )}
-          </div>
           <p className="l1-hero-verdict">{narrative?.labelReason}</p>
+          <FitStack row={row} weights={r.weights} />
         </div>
         <div className="l1-hero-score-box">
           <div className="l1-hero-score">
             <span className="score-num">{row.EC >= 1 ? pct(row.C) : '—'}</span>
-            <span className="score-label">{tr('Mức phù hợp', 'Overall Fit')}</span>
+            <span className="score-label">{tr('Điểm so sánh', 'Comparison score')}</span>
           </div>
+          {narrative?.rawFit != null && <span className="score-rank" title={tr('Tổng điểm 3 phần trước khi so sánh giữa các ngành (thang 0–100).', 'Sum of the 3 parts before comparing groups (0–100).')}>{tr('Mức khớp thực', 'Actual match')}: {narrative.rawFit}/100</span>}
           <span className="score-rank">
             {row.rank ? `${tr('Hạng', 'Rank')} #${row.rank}/${r.ranked.length}` : tr('Không xếp hạng', 'Unranked')}
           </span>
@@ -149,14 +152,14 @@ export function L1({ out, kb, sel, setSel }) {
           className={`mode-btn ${viewMode === 'story' ? 'active' : ''}`}
           onClick={() => setViewMode('story')}
         >
-          📖 {tr('Bài luận giải định hướng chi tiết', 'Detailed Guidance Narrative')}
+          📖 {tr('Giải thích từng bước', 'Step-by-step explanation')}
         </button>
         <button
           type="button"
           className={`mode-btn ${viewMode === 'table' ? 'active' : ''}`}
           onClick={() => setViewMode('table')}
         >
-          📊 {tr('Bảng đối chiếu 3 trụ cột (Thanh đo)', 'Pillars Comparison Chart')}
+          📊 {tr('Xem nhanh bằng thanh đo', 'Quick bar view')}
         </button>
       </div>
 
@@ -193,19 +196,13 @@ export function L1({ out, kb, sel, setSel }) {
 
               {narrative.birthMatrixPresent.length > 0 && (
                 <div className="narrative-sub-box">
-                  <b>{tr('Ma trận ngày sinh & Trục tâm lý:', 'Birth Chart & Psychological Axes:')}</b>
-                  <p className="small" style={{ margin: '4px 0 0' }}>
-                    {tr(
-                      `Biểu đồ ngày sinh 3×3 của bạn có các chữ số: [${narrative.birthDigitsSummary}] (nằm ở các trục Thể chất, Tâm hồn và Trí não).`,
-                      `Your 3×3 birth chart contains numbers: [${narrative.birthDigitsSummary}].`
-                    )}
-                  </p>
+                  <b>{tr('Thế mạnh & gợi ý phát triển (chỉ để tham khảo, không tính vào điểm):', 'Strengths & growth tips (for reflection only, not scored):')}</b>
                   {narrative.arrowAnalysis && narrative.arrowAnalysis.length > 0 ? (
                     <div className="arrow-explain-list" style={{ marginTop: 8 }}>
-                      {narrative.arrowAnalysis.map((item, idx) => (
+                      {[...narrative.arrowAnalysis.filter((x) => x.isStrong), ...narrative.arrowAnalysis.filter((x) => !x.isStrong).slice(0, 2)].map((item, idx) => (
                         <div key={idx} className="arrow-explain-item">
                           <span className={`arrow-type-pill ${item.isStrong ? 'strong' : 'growth'}`}>
-                            {item.isStrong ? tr('Thế mạnh', 'Strength') : tr('Vùng rèn luyện', 'Growth Area')}
+                            {item.isStrong ? tr('Thế mạnh', 'Strength') : tr('Gợi ý', 'Tip')}
                           </span>
                           <div className="arrow-item-content">
                             <b>{item.title}</b>
@@ -221,8 +218,8 @@ export function L1({ out, kb, sel, setSel }) {
                   )}
                   <p className="small muted" style={{ margin: '8px 0 0', fontStyle: 'italic', borderTop: '1px dashed var(--line-2)', paddingTop: 6 }}>
                     {tr(
-                      '💡 Lưu ý: Các "Vùng rèn luyện" xuất hiện khi ngày sinh khuyết thiếu một dãy số (ví dụ trống cả 3 số 4, 5, 6 trên trục Ý chí). Đây là cơ hội để bạn trau dồi thêm kỹ năng mềm trong quá trình học đại học, không phải khuyết điểm cố định.',
-                      '💡 Note: Growth areas appear when a row or column is empty in the birth chart. They represent soft skills to nurture in college, not permanent flaws.'
+                      '💡 Đây chỉ là gợi ý nhỏ để bạn thử, không phải nhận xét về con người bạn. Ngày sinh không quyết định điểm mạnh hay điểm yếu – thói quen và sự rèn luyện mới quyết định.',
+                      '💡 These are small ideas to try, not judgements about you. Your birth date does not decide your strengths or weaknesses – habits and practice do.'
                     )}
                   </p>
                 </div>
@@ -249,9 +246,9 @@ export function L1({ out, kb, sel, setSel }) {
               <div className="major-traits-list">
                 {narrative.majorTraits.map((t) => (
                   <div key={t.pos} className="major-trait-row">
-                    <span className="trait-pos-badge">{tr('Vị trí', 'Pos')} {t.pos}</span>
+                    <span className="trait-pos-badge">{[tr('Nét chính', 'Main'), tr('Nét phụ', 'Second'), tr('Nét bổ trợ', 'Supporting')][t.pos - 1]}</span>
                     <div className="trait-detail">
-                      <b>{t.traitTitle} <span className="small muted">({tr('Nét tính cách', 'Archetype')} {t.archetype})</span></b>
+                      <b>{t.traitTitle} <span className="small muted">(<Term k="Nét tính cách">{tr('nét', 'trait')}</Term> {t.archetype})</span></b>
                       <span className="small muted" style={{ display: 'block', marginTop: 2 }}>
                         {tr('Kỹ năng tương ứng:', 'Linked skill:')} <b>{t.skill}</b>
                       </span>
@@ -338,13 +335,14 @@ export function L1({ out, kb, sel, setSel }) {
                   <p className="pillar-text">
                     {tr('Dựa trên 3 kỹ năng bạn tự chấm: ', 'Based on your 3 self-rated skills: ')}
                     <b>{narrative.majorTraits.map((t) => `${t.skill} (${t.rating}/5)`).join(' · ')}</b>.
-                    {tr(' Điểm trung bình đạt ', ' Average score is ')}
-                    <b>{fmt(narrative.avgSkillVal, 1)}/5 sao</b>
+                    {tr(' Điểm kỹ năng của ngành: ', ' Skill score for this group: ')}
+                    <b>{fmt(narrative.avgSkillVal, 1)}/5</b>
                     {tr(
-                      ` (mức chuẩn khuyến nghị là ≥ ${fmt(narrative.skillNeedVal, 1)}/5 sao).`,
-                      ` (recommended bar is ≥ ${fmt(narrative.skillNeedVal, 1)}/5).`
+                      ` (mức chuẩn là từ ${fmt(narrative.skillNeedVal, 1)}/5).`,
+                      ` (the bar is ${fmt(narrative.skillNeedVal, 1)}/5).`
                     )}
                   </p>
+                  <p className="small muted" style={{ margin: '2px 0 6px' }}>{narrative.skillAvgNote}</p>
                   <div className="pillar-formula-box">
                     <span className="formula-inline-tag">📌 {tr('Cơ cấu & Điểm đạt được:', 'Score breakdown:')}</span>
                     <div className="formula-inline-math">
@@ -396,7 +394,7 @@ export function L1({ out, kb, sel, setSel }) {
               <span className="step-tag done">4</span>
               <div>
                 <h3>{tr('Tổng kết mức độ phù hợp & Lời khuyên định hướng', 'Summary & Guidance Advice')}</h3>
-                <span className="small muted">{tr('Đúc kết từ góc nhìn khoa học ra quyết định & tư vấn học đường', 'Decision Science & Student Guidance synthesis')}</span>
+                <span className="small muted">{tr('Điều bạn nên nhớ và bước tiếp theo', 'What to remember and what to do next')}</span>
               </div>
             </div>
 
@@ -408,8 +406,9 @@ export function L1({ out, kb, sel, setSel }) {
                 <span className="eq-op">+</span>
                 <span className="eq-term">{tr('Thần số học', 'Numerology')}: <b>{narrative.pctNF}%</b></span>
                 <span className="eq-op">=</span>
-                <span className="eq-total"><b>{row.EC >= 1 ? pct(row.C) : '—'}</b> {tr('Phù hợp', 'Overall Fit')}</span>
+                <span className="eq-total"><b>{row.EC >= 1 ? pct(row.C) : '—'}</b> {tr('điểm so sánh', 'comparison score')}</span>
               </div>
+              <p className="small muted" style={{ margin: '6px 0 0' }}>{tr('Ngành hợp nhất của bạn luôn được 100%; các ngành khác được chấm so với ngành đó. Con số này không phải xác suất thành công.', 'Your best-fit group is always 100%; other groups are scored against it. This is not a probability of success.')}</p>
 
               <div className="verdict-formula-note">
                 <span className="small muted">
@@ -510,7 +509,7 @@ export function L2({ out, kb, sel, setSel }) {
             const v = sig[g];
             return (
               <div key={g} className={`sig ${hit ? 'on' : ''}`}>
-                <span className="small muted">{sigName(g)} · {tr(SIG_NAME[g][2], SIG_NAME[g][3])}</span>
+                <span className="small muted">{g === 'G1' ? <Term k="Số chủ đạo">{sigName(g)}</Term> : sigName(g)} · <SchoolTerm text={tr(SIG_NAME[g][2], SIG_NAME[g][3])} /></span>
                 <span className="big num">{v}</span>
                 <span className="small">{derivePlain(g, sig)}</span>
                 {sig.arch[g] !== v && <span className="small muted">{tr(`Số ${v} được tính như số ${sig.arch[g]}.`, `${v} counts as ${sig.arch[g]}.`)}</span>}
@@ -544,8 +543,8 @@ export function L2({ out, kb, sel, setSel }) {
         </details>
       )}
       {extras && (
-        <details className="panel teacher" open>
-          <summary>{tr('Chỉ số tham khảo & Phân tích tâm lý học đường (không dùng để chấm)', 'Reference indicators & Growth areas (not used in scoring)')}</summary>
+        <details className="panel teacher">
+          <summary>{tr('Chỉ số tham khảo thêm (không dùng để chấm điểm)', 'Extra reference indicators (not used in scoring)')}</summary>
           <div className="teacher-body grid2">
             <div className="birth-chart-card">
               <div className="birth-chart-head">
@@ -596,7 +595,7 @@ export function L2({ out, kb, sel, setSel }) {
                 <p className="small muted">
                   <b>{tr('💡 Ghi chú về ma trận ngày sinh:', '💡 About the Birth Chart Matrix:')}</b>{' '}
                   {tr(
-                    'Ma trận được lập bằng cách điền các chữ số xuất hiện trong ngày tháng năm sinh vào 9 vị trí cố định theo 3 tầng biểu đạt. Các hàng, cột hoặc đường chéo có đủ số (hoặc vắng mặt toàn bộ) sẽ hình thành nên các "Mũi tên tâm lý" (thế mạnh hoặc vùng rèn luyện) được phân tích chi tiết ở bảng bên cạnh.',
+                    'Ma trận được lập bằng cách điền các chữ số xuất hiện trong ngày tháng năm sinh vào 9 vị trí cố định theo 3 tầng biểu đạt. Hàng, cột hoặc đường chéo có đủ 3 số được xem là một thế mạnh; hàng trống cả 3 số chỉ gợi ý một thói quen nên rèn thêm.',
                     'The matrix is populated by placing the digits from your birth date into 9 fixed positions across 3 planes. Complete lines or empty gaps form the "Psychological Arrows" (strengths or growth areas) analyzed in the adjacent table.'
                   )}
                 </p>
@@ -604,14 +603,15 @@ export function L2({ out, kb, sel, setSel }) {
             </div>
             <table className="tbl"><tbody>
               <tr><td>{tr('Số linh hồn', 'Soul Urge')}</td><td className="r">{sig.soulUrge}</td></tr>
-              <tr><td>{t('Số thiếu (PY03)')}</td><td>{extras.missing.join(', ') || tr('không', 'none')}</td></tr>
+              <tr><td>{tr('Các số không có trong ngày sinh', 'Numbers missing from birth date')}</td><td>{extras.missing.join(', ') || tr('không', 'none')}</td></tr>
               <tr>
-                <td>{t('Mũi tên tâm lý (PY04)')}</td>
+                <td>{tr('Thế mạnh & gợi ý', 'Strengths & tips')}</td>
                 <td>
                   {extras.arrows.length > 0 ? (
                     <ul className="arrow-list">
                       {extras.arrows.map((a) => {
                         const isGrowth = a.includes('Frustration') || a.includes('Passivity') || a.includes('Disorder') || a.includes('Hypersensitivity') || a.includes('Poor Memory') || a.includes('Procrastination') || a.includes('Scepticism');
+                        if (isGrowth && extras.arrows.filter((x) => /Frustration|Passivity|Disorder|Hypersensitivity|Poor Memory|Procrastination|Scepticism/.test(x)).indexOf(a) >= 2) return null;
                         return (
                           <li key={a} className={isGrowth ? 'arrow-growth' : 'arrow-strength'}>
                             <span>{isGrowth ? '🌱 ' : '★ '}</span>{formatArrow(a)}
@@ -622,15 +622,15 @@ export function L2({ out, kb, sel, setSel }) {
                   ) : tr('không có trục đầy/trống', 'none')}
                   <p className="small muted" style={{ marginTop: 6, lineHeight: 1.45 }}>
                     {tr(
-                      '💡 Lưu ý: Mũi tên thế mạnh (★) hình thành khi ngày sinh có đủ 3 số trên cùng một trục. Ngược lại, mũi tên "vùng rèn luyện" (🌱) xuất hiện khi ngày sinh KHUYẾT THIẾU cả 3 số trên trục đó (ví dụ trống dãy 4-5-6 hoặc 3-5-7). Đây là cơ hội để bạn chủ động trau dồi thêm kỹ năng mềm trong quá trình học đại học, hoàn toàn không phải khuyết điểm cố định.',
+                      '💡 ★ = thế mạnh (ngày sinh có đủ 3 số trên một hàng). 🌱 = gợi ý phát triển (hàng đó trống) – chỉ là ý tưởng để thử, không phải nhận xét về bạn. Hiển thị tối đa 2 gợi ý.',
                       '💡 Note: Strengths (★) form when all 3 numbers are present. Growth areas (🌱) appear when a row or diagonal is missing all 3 numbers. They represent soft skills to nurture in college, not fixed flaws.'
                     )}
                   </p>
                 </td>
               </tr>
-              <tr><td>{tr('Số thể hiện bên ngoài (PY06)', 'Outer expression (PY06)')}</td><td className="r">{extras.outer}</td></tr>
-              <tr><td>{tr('Vệ Đà: tâm hồn / định mệnh / danh tính', 'Vedic: psychic / destiny / name')}</td><td className="r">{extras.vedic.psychicType} · {extras.vedic.destiny} · {extras.vedic.name}</td></tr>
-              <tr><td>{t('Kabala: khóa ngày sinh · hành tinh')}</td><td className="r">{extras.kabala.birthKey} · {extras.kabala.birthPlanet}</td></tr>
+              <tr><td>{tr('Số thể hiện bên ngoài', 'Outer expression number')}</td><td className="r">{extras.outer}</td></tr>
+              <tr><td><Term k="Vệ Đà">{tr('Vệ Đà', 'Vedic')}</Term>: {tr('kiểu tâm hồn / số định mệnh / số tên', 'psychic type / destiny / name')}</td><td className="r">{extras.vedic.psychicType === 'Pure' ? tr('Đơn (ngày 1–9)', 'Pure (day 1–9)') : tr('Ghép (ngày 10–31)', 'Compound (day 10–31)')} · {extras.vedic.destiny} · {extras.vedic.name}</td></tr>
+              <tr><td><Term k="Kabala">Kabala</Term>: {tr('số khóa ngày sinh · hành tinh', 'birth key · planet')}</td><td className="r">{extras.kabala.birthKey} · {tr(PLANET_VI[extras.kabala.birthPlanet] ?? extras.kabala.birthPlanet, extras.kabala.birthPlanet)}</td></tr>
             </tbody></table>
           </div>
         </details>
@@ -748,7 +748,6 @@ function Step({ no, title, say, symbols, general, real, note, src }) {
     <div className="step">
       <div className="step-head">
         <h3>{tr('Bước', 'Step')} {no} · {title}</h3>
-        {src && <Src>{src}</Src>}
       </div>
       {say && <p className="step-say">{say}</p>}
       {symbols && symbols.length > 0 && (
@@ -757,7 +756,7 @@ function Step({ no, title, say, symbols, general, real, note, src }) {
           <ul className="step-symbols-list">
             {symbols.map(([sym, exp, val]) => (
               <li key={sym}>
-                <code>{sym}</code>: {exp}{val !== undefined && <> → <b>{val}</b></>}
+                <Tex display={false}>{sym}</Tex>: {exp}{val !== undefined && <> → <b>{val}</b></>}
               </li>
             ))}
           </ul>
@@ -776,6 +775,7 @@ function Step({ no, title, say, symbols, general, real, note, src }) {
         </div>
       )}
       {note && <p className="small real-note">{note}</p>}
+      {src && <details className="step-src"><summary className="small muted">{tr('Truy vết nguồn (dành cho giáo viên)', 'Source trace (for teachers)')}</summary><Src>{src}</Src></details>}
     </div>
   );
 }
@@ -1117,7 +1117,7 @@ export function L5({ out, kb, sel, setSel, compare }) {
 
   return (
     <>
-      <p className="howto"><b>{tr('Cách đọc bảng', 'How to read this')}:</b> {tr(`hệ thống chấm cả 35 nhóm ngành. % phù hợp càng cao càng hợp với bạn (chỉ so sánh giữa các ngành của chính bạn). "Con số trùng" là số con số của bạn khớp nét tính cách của nhóm ngành; "Kỹ năng" là điểm trung bình bạn tự chấm cho các kỹ năng liên quan (cần từ ${fmt(SKILL_NEED(kb), 1)}/5). Nhóm không có con số trùng thì không được xếp hạng.`, `all 35 major groups are scored. Higher fit % = better for you (only compared within your own results). "Matching numbers" counts your numbers that match the group's traits; "Skills" is your average self-rating of the related skills (bar: ${fmt(SKILL_NEED(kb), 1)}/5). Groups with no match are not ranked.`)}</p>
+      <p className="howto"><b>{tr('Cách đọc bảng', 'How to read this')}:</b> {tr(`hệ thống chấm cả 35 nhóm ngành. % phù hợp càng cao càng hợp với bạn (chỉ so sánh giữa các ngành của chính bạn). "Con số trùng" là số con số của bạn khớp nét tính cách của nhóm ngành; "Kỹ năng" là điểm trung bình bạn tự chấm cho các kỹ năng liên quan (cần từ ${fmt(SKILL_NEED(kb), 1)}/5). Nhóm không có con số trùng thì không được xếp hạng. Nhãn (Ưu tiên/Cân nhắc/Thử thách) được xét riêng theo ngưỡng, nên có thể không đi theo thứ tự %.`, `all 35 major groups are scored. Higher fit % = better for you (only compared within your own results). "Matching numbers" counts your numbers that match the group's traits; "Skills" is your average self-rating of the related skills (bar: ${fmt(SKILL_NEED(kb), 1)}/5). Groups with no match are not ranked.`)}</p>
       <section className="panel">
         <div className="panel-head">
           <h2>{tr('Bảng xếp hạng 35 nhóm ngành', '35 Major-group ranking')}</h2>
@@ -1182,7 +1182,7 @@ export function L5({ out, kb, sel, setSel, compare }) {
             className="l5-env-select"
             value={filterEnv}
             onChange={(e) => setFilterEnv(e.target.value)}
-            aria-label="Lọc theo môi trường làm việc"
+            aria-label={tr('Lọc theo môi trường làm việc', 'Filter by work environment')}
           >
             <option value="">{tr('Mọi môi trường làm việc', 'All environments')}</option>
             {Object.keys(kb.envs).map((e) => (
@@ -1191,6 +1191,7 @@ export function L5({ out, kb, sel, setSel, compare }) {
           </select>
         </div>
 
+        {labelRankNote(ranked) && !filterLabel && <p className="small muted note-box">ℹ️ {labelRankNote(ranked)}</p>}
         <div className="small muted" style={{ margin: '4px 0 8px' }}>
           {tr(`Hiển thị ${filteredRows.length} trên tổng số ${rows.length} nhóm ngành:`, `Showing ${filteredRows.length} of ${rows.length} major groups:`)}
         </div>
@@ -1204,7 +1205,7 @@ export function L5({ out, kb, sel, setSel, compare }) {
                 <td className="r">{r.rank ?? '—'}</td>
                 <td>
                   <b>{m.name}</b>
-                  {m.more > 0 && <span className="muted small"> +{m.more} {tr('ngành khác', 'others')}</span>}
+                  {m.more > 0 && <span className="muted small" title={groupMajorNames(kb, r.profile).join(' · ')}> +{m.more} {tr('ngành khác', 'others')}</span>}
                   <div className="small muted">{envName(kb, r.env)}</div>
                 </td>
                 <td><span className="pct-cell"><span className="mrow-bar"><span style={{ width: `${(r.EC >= 1 ? r.C : 0) * 100}%` }} /></span><b className="num">{r.EC >= 1 ? pct(r.C) : '—'}</b></span></td>
@@ -1307,7 +1308,7 @@ export function L6({ out, kb }) {
                 {meaningText ? <>
                   <p>“{meaningText}”</p>
                   {vocationsText && <p className="small"><b>{tr('Nghề theo sách', 'Careers in the book')}:</b> {vocationsText}</p>}
-                  <span className="src">{tr('Nguồn', 'Source')}: {m?.source_note ?? ''}{cs.length ? ` · ${cs.map((c) => c.author ?? c.source_code).join('; ')}` : ''}</span>
+                  <span className="src">{tr('Nguồn', 'Source')}: {cleanNote(m?.source_note)}{cs.length ? ` · ${cs.map((c) => c.author ?? c.source_code).join('; ')}` : ''}</span>
                 </> : <p className="small muted">{t('chưa có trong bảng ý nghĩa')}</p>}
               </div>
             );
@@ -1403,7 +1404,7 @@ export function L7({ out, kb, meta }) {
           <div className="plain-list">
             <p>{meta?.simulated ? tr('Học sinh mô phỏng – không phải người thật.', 'Simulated student – not a real person.') : tr('Thông tin bạn tự nhập – không được lưu lại.', 'Information you entered – not saved.')}</p>
             <p>{tr('Tri thức lấy từ bảng tính DSS v6 của nhóm; kết quả web đã kiểm tra khớp 100% với bảng tính.', "Knowledge comes from the group's DSS v6 workbook; web results were checked to match it 100%.")}</p>
-            <p>{tr('Trọng số: ROC (mặc định), đưa về cùng thang trước khi cộng.', 'Weights: ROC (default), scaled before adding.')}</p>
+            <p>{tr('Tỉ lệ coi trọng 3 yếu tố được xếp theo mức quan trọng mà các nghiên cứu hướng nghiệp đưa ra (phương pháp ROC); 3 yếu tố được đưa về cùng thang trước khi cộng.', 'The weights of the 3 factors follow the importance ranking found in career-guidance research (ROC method); factors are put on the same scale before adding.')}</p>
           </div>
         </section>
       </div>

@@ -90,7 +90,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .l0 { display: grid; gap: 12px; grid-template-columns: minmax(0, 1.6fr) minmax(300px, 1fr); align-items: start; }
 .l0-main { display: grid; gap: 12px; min-width: 0; }
 .zone-whatif { position: sticky; top: 12px; }
-@media (max-width: 960px) { .l0 { grid-template-columns: 1fr; } .zone-whatif { position: static; } }
+@media (max-width: 960px) { .l0 { grid-template-columns: minmax(0, 1fr); } .l0-main { grid-template-columns: minmax(0, 1fr); } .zone-whatif { position: static; } }
 .whatif-on { background: var(--surface-2); border: 1px dashed var(--c-sr); border-radius: var(--radius-s); padding: 6px 10px; font-size: 0.86rem; }
 
 /* thẻ câu trả lời */
@@ -175,7 +175,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .wi-label { font-weight: 700; font-size: 0.8rem; color: var(--ink-2); }
 .wi-adv { border: 1px solid var(--line-2); border-radius: var(--radius-s); padding: 6px 10px; }
 .wi-adv summary { cursor: pointer; font-weight: 600; font-size: 0.82rem; color: var(--ink-2); }
-.skills-wi { display: grid; grid-template-columns: 1fr; gap: 4px; }
+.skills-wi { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
 .sk { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 4px; font-size: 0.8rem; }
 .sk-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sk.weak .sk-name { color: var(--bad-ink); font-weight: 600; }
@@ -1562,3 +1562,115 @@ table.tbl { border-collapse: collapse; width: 100%; font-size: 0.82rem; }
 }
 
 
+
+/* =====================================================================
+   v4 – BẢN DỄ DÙNG CHO HỌC SINH THPT (trang đầu, form nhiều bước, tab 2 tầng,
+   thanh 3 phần, ghi chú nhãn/hạng, từ điển nhỏ, điện thoại)
+   ===================================================================== */
+
+/* điều hướng 2 tầng – cuộn ngang trên điện thoại thay vì xuống 3 dòng */
+.layers { display: grid; gap: 6px; flex-wrap: nowrap; }
+.layers-main, .layers-deep { display: flex; gap: 6px; align-items: center; overflow-x: auto; scrollbar-width: thin; padding-bottom: 2px; }
+.layers-main a, .layers-deep a { white-space: nowrap; flex: 0 0 auto; }
+.layers-main a { font-size: 0.9rem; padding: 7px 14px; }
+.layers-deep a { font-size: 0.78rem; padding: 3px 10px; border-style: dashed; }
+.layers-deep > span { flex: 0 0 auto; }
+
+/* thanh 3 phần */
+.fitstack { margin: 10px 0 4px; display: grid; gap: 6px; }
+.fitstack-track { display: flex; gap: 3px; height: 14px; }
+.fitstack-slot { position: relative; border-radius: 4px; overflow: hidden; background: var(--muted-bg); }
+.fitstack-fill { height: 100%; border-radius: 4px; }
+.fitstack-slot.env .fitstack-fill, .fitstack-legend i.env { background: var(--c-env); }
+.fitstack-slot.sr .fitstack-fill, .fitstack-legend i.sr { background: var(--c-sr); }
+.fitstack-slot.nf .fitstack-fill, .fitstack-legend i.nf { background: var(--c-nf); }
+.fitstack-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 0.78rem; color: var(--ink-2); }
+.fitstack-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+
+/* các ngành trong nhóm */
+.group-majors { margin: 4px 0; }
+.group-majors summary { cursor: pointer; width: fit-content; }
+.group-majors p { margin-top: 4px; color: var(--ink-2); }
+.group-majors.inline { display: inline-block; }
+
+.note-box { margin-top: 8px; padding: 8px 10px; border-radius: var(--radius-s); background: var(--surface-2); border: 1px dashed var(--line); line-height: 1.45; }
+.pct-raw { font-size: 0.74rem; color: var(--ink-2); margin-top: 2px; }
+.wi-hint { margin: -2px 0 4px; line-height: 1.4; }
+.term { text-decoration: underline dotted; text-underline-offset: 3px; cursor: help; }
+.step-src { margin-top: 6px; }
+.step-src summary { cursor: pointer; }
+
+/* trang đầu */
+.home { max-width: 900px; margin: 12px auto; display: grid; gap: 12px; }
+.home-hero { padding: 28px 24px; display: grid; gap: 10px; }
+.home-hero h2 { font-size: 1.9rem; letter-spacing: -0.02em; }
+.home-hero p { font-size: 1.02rem; color: var(--ink-2); max-width: 640px; }
+.home-cta { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; margin-top: 6px; }
+.btn.big { font-size: 1.02rem; padding: 12px 20px; border-radius: 10px; }
+.home-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.home-step { display: grid; gap: 4px; align-content: start; }
+.home-step-ic { font-size: 1.5rem; }
+@media (max-width: 720px) { .home-steps { grid-template-columns: 1fr; } .home-hero h2 { font-size: 1.5rem; } }
+.guest-cta { margin-bottom: 14px; }
+.guest-cta .btn { display: block; text-align: center; text-decoration: none; white-space: normal; }
+
+/* form nhiều bước */
+.wizard { max-width: 760px; margin: 0 auto; display: grid; gap: 14px; }
+.wizard-head { display: grid; gap: 8px; }
+.wizard-steps { list-style: none; margin: 4px 0 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.wizard-steps button { width: 100%; text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: var(--radius-s); padding: 6px 8px; font-size: 0.78rem; font-weight: 600; color: var(--ink-3); cursor: pointer; }
+.wizard-steps button:disabled { cursor: default; }
+.wizard-steps li.on button { border-color: var(--ink); color: var(--ink); }
+.wizard-steps li.done button { color: var(--good-ink); border-color: var(--good); }
+.wizard-steps .num { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--muted-bg); margin-right: 4px; font-size: 0.72rem; }
+.wizard-steps li.on .num { background: var(--ink); color: var(--surface); }
+@media (max-width: 560px) { .wizard-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.wizard-progress { height: 4px; background: var(--muted-bg); border-radius: 4px; overflow: hidden; }
+.wizard-progress span { display: block; height: 100%; background: var(--c-sr); transition: width .25s; }
+.wizard-body { display: grid; gap: 10px; }
+.wizard-q { font-weight: 700; font-size: 1rem; margin-bottom: 4px; }
+.wizard-nav { display: flex; justify-content: space-between; gap: 8px; border-top: 1px solid var(--line-2); padding-top: 12px; }
+.wizard-nav .btn.primary { padding: 9px 18px; }
+.wizard .field input[type="text"], .wizard .field input[type="date"], .wizard .field input[type="search"] { width: 100%; padding: 9px 10px; }
+
+.env-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 6px; }
+@media (max-width: 560px) { .env-cards { grid-template-columns: 1fr; } }
+.env-card { position: relative; display: grid; gap: 4px; padding: 12px 14px; border: 1.5px solid var(--line); border-radius: var(--radius-l); background: var(--surface); cursor: pointer; }
+.env-card:hover { border-color: var(--ink-2); }
+.env-card.on { border-color: var(--c-sr); box-shadow: 0 0 0 2px color-mix(in srgb, var(--c-sr) 30%, transparent); }
+.env-card input { position: absolute; top: 12px; right: 12px; }
+.env-card:has(input:focus-visible) { outline: 3px solid var(--focus); outline-offset: 2px; }
+.env-icon { font-size: 1.4rem; }
+
+.wizard .likert { gap: 0; }
+.wizard .likert-row { padding: 8px 0; border-bottom: 1px solid var(--line-2); font-size: 0.9rem; }
+.wizard .likert-row.missing { background: var(--warn-bg); border-radius: 6px; padding-inline: 6px; }
+.likert-label { display: grid; gap: 1px; }
+.wizard .likert-scale button { width: 34px; height: 34px; font-size: 0.86rem; }
+.rating-legend { display: flex; flex-wrap: wrap; gap: 2px 12px; }
+@media (max-width: 560px) { .wizard .likert-row { grid-template-columns: 1fr; } .wizard .likert-scale { justify-content: flex-start; } }
+.exam-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 14px; }
+.exam-grid label { display: flex; justify-content: space-between; gap: 8px; }
+.exam-grid input { width: 80px; }
+@media (max-width: 560px) { .exam-grid { grid-template-columns: 1fr; } }
+
+/* điện thoại: không để phần tử nào đẩy trang tràn ngang */
+main { min-width: 0; }
+@media (max-width: 600px) {
+  .shell { padding: 10px 10px 24px; }
+  .mrow { grid-template-columns: minmax(0, 1fr) 44px auto; }
+  .mrow .mrow-bar { display: none; }
+  .mrow .why-btn { grid-column: 1 / -1; justify-self: start; }
+  .l1-hero-banner { flex-direction: column; }
+  .topbar .sim-badge { order: 5; }
+}
+a.btn { text-decoration: none; display: inline-block; }
+@media (max-width: 600px) {
+  .answer { grid-template-columns: minmax(0, 1fr); }
+  .zone-whatif, .zone-kpi, .panel { min-width: 0; }
+  .kpis { grid-template-columns: minmax(0, 1fr); }
+}
+.wi { grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 600px) { .wi-row { grid-template-columns: minmax(0, 1fr); gap: 4px; } }
+.sk-row { min-width: 0; }
+.sk-header .sk-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
