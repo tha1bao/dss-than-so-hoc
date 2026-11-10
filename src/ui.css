@@ -90,7 +90,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .l0 { display: grid; gap: 12px; grid-template-columns: minmax(0, 1.6fr) minmax(300px, 1fr); align-items: start; }
 .l0-main { display: grid; gap: 12px; min-width: 0; }
 .zone-whatif { position: sticky; top: 12px; }
-@media (max-width: 960px) { .l0 { grid-template-columns: 1fr; } .zone-whatif { position: static; } }
+@media (max-width: 960px) { .l0 { grid-template-columns: minmax(0, 1fr); } .l0-main { grid-template-columns: minmax(0, 1fr); } .zone-whatif { position: static; } }
 .whatif-on { background: var(--surface-2); border: 1px dashed var(--c-sr); border-radius: var(--radius-s); padding: 6px 10px; font-size: 0.86rem; }
 
 /* thẻ câu trả lời */
@@ -175,7 +175,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .wi-label { font-weight: 700; font-size: 0.8rem; color: var(--ink-2); }
 .wi-adv { border: 1px solid var(--line-2); border-radius: var(--radius-s); padding: 6px 10px; }
 .wi-adv summary { cursor: pointer; font-weight: 600; font-size: 0.82rem; color: var(--ink-2); }
-.skills-wi { display: grid; grid-template-columns: 1fr; gap: 4px; }
+.skills-wi { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
 .sk { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 4px; font-size: 0.8rem; }
 .sk-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sk.weak .sk-name { color: var(--bad-ink); font-weight: 600; }
@@ -1665,3 +1665,12 @@ main { min-width: 0; }
   .topbar .sim-badge { order: 5; }
 }
 a.btn { text-decoration: none; display: inline-block; }
+@media (max-width: 600px) {
+  .answer { grid-template-columns: minmax(0, 1fr); }
+  .zone-whatif, .zone-kpi, .panel { min-width: 0; }
+  .kpis { grid-template-columns: minmax(0, 1fr); }
+}
+.wi { grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 600px) { .wi-row { grid-template-columns: minmax(0, 1fr); gap: 4px; } }
+.sk-row { min-width: 0; }
+.sk-header .sk-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
